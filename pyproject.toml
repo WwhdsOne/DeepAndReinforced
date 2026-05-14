@@ -22,7 +22,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["experiments/pic-classify/src/pic_classify"]
+packages = [
+    "experiments/pic-classify/src/pic_classify",
+    "experiments/neural_network/src/neural_network",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["experiments"]
@@ -30,3 +33,7 @@ testpaths = ["experiments"]
 [project.scripts]
 pic-classify-train = "pic_classify.train:main"
 pic-classify-predict = "pic_classify.predict:main"
+mnist-train = "neural_network.mnist:train_main"
+mnist-predict = "neural_network.mnist:predict_main"
+mnist-evaluate = "neural_network.mnist:evaluate_main"
+mnist-visualize = "neural_network.visualize:visualize_main"

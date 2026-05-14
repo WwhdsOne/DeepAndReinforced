@@ -93,6 +93,49 @@ uv run pic-classify-predict path/to/image.png [options]
 uv run pic-classify-predict ./demo.png --top-k 5
 ```
 
+## 训练增强与归一化说明
+
+### 训练增强（Data Augmentation）
+
+训练增强通过对训练图像做随机变换，人为增加数据多样性，从而抑制过拟合、提升模型泛化能力。当前 `build_train_transform()` 包含两种增强：
+
+| 变换 | 说明 |
+|---|---|
+| `RandomHorizontalFlip()` | 以 50% 概率对图像做水平翻转。CIFAR-10 中许多物体（如飞机、马）水平翻转后仍合法，此操作可有效增加样本多样性。 |
+| `RandomCrop(32, padding=4)` | 先对图像四周各填充 4 像素（共 36×36），再随机裁剪回 32×32。使模型对物体的平移和局部遮挡更鲁棒。 |
+
+> 验证/预测阶段不使用增强，仅做 `Resize` + `ToTensor()` + 归一化，保证结果确定性。
+
+### 归一化参数（Normalization）
+
+`transforms.Normalize(mean, std)` 将每个通道的像素值按以下公式归一化到近似零均值、单位方差：
+$$
+\text{output} = \frac{\text{input} - \text{mean}}{\text{std}}
+$$
+
+其中标准差 $\text{std}$（按通道独立计算）为：
+$$
+\text{std} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (x_i - \text{mean})^2}
+$$
+
+- $x_i$：单个像素值（某个通道）
+- $\text{mean}$：该通道的均值
+- $N$：该通道的像素总数
+- $\sum$：对所有像素求和
+
+CIFAR-10 的均值和标准差是从整个训练集统计得到的，写入 `data.py` 中的常量：
+
+```
+mean = (0.4914, 0.4822, 0.4465)   # (R, G, B)
+std  = (0.2470, 0.2435, 0.2616)   # (R, G, B)
+```
+
+使用这些预计算统计量（而非每次动态计算）的原因是：
+- 训练集和验证集必须使用相同的均值/标准差，否则分布不一致会影响模型性能；
+- 与 torchvision 官方 CIFAR-10 示例保持一致，便于复现结果。
+
+---
+
 ## 当前固定配置
 
 下面这些参数目前写死在代码中，不通过命令行暴露：
