@@ -20,34 +20,31 @@ uv sync --group dev
 ## 仓库结构
 
 ```text
-.
-├── AGENTS.md
-├── pyproject.toml
-├── experiments/
-│   ├── pic-classify/
-│   │   ├── README.md
-│   │   ├── src/pic_classify/
-│   │   └── tests/
-│   └── fish-book/
-│       ├── ch3/
-│       ├── ch4/
-│       ├── ch5/
-│       └── common/
-├── learning-logs/
-│   ├── 2026-05-13.md
-│   ├── 2026-05-14.md
-│   ├── 2026-05-15.md
-│   └── 2026-05-16.md
-└── pic-classify/
+.                                    # 项目根目录
+├── AGENTS.md                        # AI代理配置文件
+├── pyproject.toml                   # Python项目配置和依赖管理
+├── experiments/                     # 实验代码目录
+│   ├── pic-classify/                # 图片分类实验
+│   │   ├── README.md                # 实验说明文档
+│   │   ├── src/pic_classify/        # 实验源代码
+│   │   └── tests/                   # 实验测试代码
+│   └── fish-book/                   # 鱼书学习实验
+│       ├── ch3/                     # 第3章：神经网络基础
+│       ├── ch4/                     # 第4章：梯度计算与优化
+│       ├── ch5/                     # 第5章：神经网络层实现
+│       └── common/                  # 通用工具函数
+├── learning-logs/                   # 学习日志目录
+│   ├── 2026-05-13.md                # 2026年5月13日学习日志
+│   ├── 2026-05-14.md                # 2026年5月14日学习日志
+│   ├── 2026-05-15.md                # 2026年5月15日学习日志
+│   └── 2026-05-16.md                # 2026年5月16日学习日志
 ```
 
 说明：
 
-- `experiments/` 放各个独立算法实验
-- 每个实验目录内维护自己的代码、测试和说明
-- `pic-classify/` 目前保留旧数据目录，但当前代码不再依赖它
+- `experiments/` 放各个独立算法实验，每个实验目录内维护自己的代码、测试和说明
 - `fish-book/` 是《深度学习入门：基于Python的理论与实现》的学习实验，按章节组织
-- `learning-logs/` 记录每日学习进度和总结
+- `learning-logs/` 记录每日学习进度和总结，格式为 `YYYY-MM-DD.md`
 
 ## pic-classify
 
