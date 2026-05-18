@@ -24,10 +24,20 @@ uv sync --group dev
 ├── AGENTS.md
 ├── pyproject.toml
 ├── experiments/
-│   └── pic-classify/
-│       ├── README.md
-│       ├── src/pic_classify/
-│       └── tests/
+│   ├── pic-classify/
+│   │   ├── README.md
+│   │   ├── src/pic_classify/
+│   │   └── tests/
+│   └── fish-book/
+│       ├── ch3/
+│       ├── ch4/
+│       ├── ch5/
+│       └── common/
+├── learning-logs/
+│   ├── 2026-05-13.md
+│   ├── 2026-05-14.md
+│   ├── 2026-05-15.md
+│   └── 2026-05-16.md
 └── pic-classify/
 ```
 
@@ -36,6 +46,8 @@ uv sync --group dev
 - `experiments/` 放各个独立算法实验
 - 每个实验目录内维护自己的代码、测试和说明
 - `pic-classify/` 目前保留旧数据目录，但当前代码不再依赖它
+- `fish-book/` 是《深度学习入门：基于Python的理论与实现》的学习实验，按章节组织
+- `learning-logs/` 记录每日学习进度和总结
 
 ## pic-classify
 
@@ -81,6 +93,31 @@ uv run pic-classify-predict path/to/image.png \
   --top-k 3
 ```
 
+## fish-book
+
+`fish-book` 是《深度学习入门：基于Python的理论与实现》（俗称“鱼书”）的学习实验代码，按章节组织。
+
+### 内容概览
+
+- **第3章**：神经网络基础实现，包括感知机、三层神经网络、激活函数可视化
+- **第4章**：梯度计算与优化，包括数值梯度、梯度下降、简单神经网络训练
+- **第5章**：神经网络层实现，包括乘法层、加法层、ReLU层、Sigmoid层、Softmax层、Affine层等
+- **通用工具**：`common/` 目录包含梯度计算、层定义等通用函数
+
+### 运行示例
+
+```bash
+# 运行第5章乘法层示例
+uv run python experiments/fish-book/ch5/multiLayer.py
+
+# 运行第5章神经网络训练
+uv run python experiments/fish-book/ch5/train_nn.py
+```
+
+### 学习笔记
+
+每日学习进度和总结记录在 `learning-logs/` 目录下，格式为 `YYYY-MM-DD.md`。
+
 ## 测试
 
 运行测试：
@@ -95,3 +132,5 @@ uv run --group dev pytest -q
 - 每个实验目录内部再维护自己的 `src/`、`tests/`、`README.md`
 - 新增命令行入口时，在根目录 `pyproject.toml` 中统一注册
 - 尽量复用同一个 `uv` 环境，不要为子目录单独维护依赖
+- 学习笔记统一记录在 `learning-logs/` 目录下，按日期组织
+- 鱼书实验按章节组织在 `experiments/fish-book/` 下，便于学习追踪
