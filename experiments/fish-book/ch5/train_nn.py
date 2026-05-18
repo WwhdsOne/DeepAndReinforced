@@ -96,18 +96,18 @@ def load_mnist(data_dir: str) -> tuple:
         return data["x_train"], data["y_train"], data["x_test"], data["y_test"]
 
 
-def main():
+def trainAndTest():
     # 超参数
     input_size = 784
-    hidden_size = 50
+    hidden_size = 256
     output_size = 10
-    iters_num = 10000
+    iters_num = 1000
     train_size = 60000
-    batch_size = 100
-    learning_rate = 0.1
+    batch_size = 128
+    learning_rate = 0.001
 
     # 加载数据
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    data_dir = os.path.join(os.path.dirname(__file__), "../data")
     x_train, t_train, x_test, t_test = load_mnist(data_dir)
 
     # 归一化并反色 (MNIST 风格)
@@ -150,6 +150,14 @@ def main():
     print(f"\n最终训练准确率: {train_acc_list[-1]:.4f}")
     print(f"最终测试准确率: {test_acc_list[-1]:.4f}")
 
+    return train_acc_list[-1], test_acc_list[-1]
+
 
 if __name__ == "__main__":
-    main()
+    tmp_avg_train_acc, tmp_avg_test_acc = 0, 0
+    for i in range(10):
+        x, y = trainAndTest()
+        tmp_avg_train_acc += x
+        tmp_avg_test_acc += y
+    print(f"平均训练准确率: {tmp_avg_train_acc / 10:.4f}")
+    print(f"平均测试准确率: {tmp_avg_test_acc / 10:.4f}")

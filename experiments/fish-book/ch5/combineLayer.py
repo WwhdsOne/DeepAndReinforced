@@ -1,5 +1,5 @@
-from multiLayer import MultiLayer
-from addLayer import AddLayer
+from common.multiLayer import MultiLayer
+from common.addLayer import AddLayer
 
 if __name__ == '__main__':
     apple_origin_price = 100

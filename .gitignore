@@ -42,7 +42,7 @@ Thumbs.db
 .pytest_cache/
 experiments/*/artifacts/
 experiments/*/data/
-experiments/fish-book/ch5/data/
+experiments/fish-book/data/
 
 # 测试覆盖率
 coverage.out
