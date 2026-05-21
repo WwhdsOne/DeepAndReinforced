@@ -94,7 +94,7 @@ def trainAndTest():
     input_size = 784
     hidden_size = 256
     output_size = 10
-    iters_num = 1000
+    iters_num = 100
     train_size = 60000
     batch_size = 128
     learning_rate = 0.001
