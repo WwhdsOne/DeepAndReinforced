@@ -2,21 +2,21 @@
 import os
 import sys
 
+from common.utils import load_mnist
 
 sys.path.append(os.pardir)
 
 import numpy as np
 from collections import OrderedDict
 from common.layers import Affine, Relu, SoftmaxWithLoss, BatchNorm, Adam, Dropout
-from common.gradient import numerical_gradient
 
 
 class MultiLayerNet:
     def __init__(self, input_size, hidden_size, output_size):
         self.params = {"W1": kaiming(input_size, hidden_size),  # Kaiming 初始化
                        "b1": np.zeros(hidden_size),
-                       "gamma1": np.ones(hidden_size),          # BatchNorm 缩放参数
-                       "beta1": np.zeros(hidden_size),           # BatchNorm 平移参数
+                       "gamma1": np.ones(hidden_size),  # BatchNorm 缩放参数
+                       "beta1": np.zeros(hidden_size),  # BatchNorm 平移参数
                        "W2": xavier(hidden_size, output_size),  # Xavier 随机初始化
                        "b2": np.zeros(output_size),
                        "gamma2": np.ones(output_size),
@@ -58,14 +58,6 @@ class MultiLayerNet:
             t = np.argmax(t, axis=1)
         return np.sum(y == t) / float(x.shape[0])
 
-    def numerical_gradient(self, x, t):
-        loss_W = lambda W: self.loss(x, t)
-
-        grads = {}
-        for key in ("W1", "b1", "gamma1", "beta1", "W2", "b2"):
-            grads[key] = numerical_gradient(loss_W, self.params[key])
-        return grads
-
     def gradient(self, x, t):
         self.loss(x, t)
 
@@ -95,36 +87,6 @@ def kaiming(input_size, hidden_size):
 
 def xavier(input_size, hidden_size):
     return np.random.randn(input_size, hidden_size) * np.sqrt(2 / (input_size + hidden_size))
-
-def load_mnist(data_dir: str) -> tuple:
-    """加载 MNIST 数据集（使用 npz 格式）。"""
-    import urllib.request
-    import ssl
-    from pathlib import Path
-
-    root = Path(data_dir)
-    root.mkdir(parents=True, exist_ok=True)
-    cache = root / "mnist.npz"
-
-    if not cache.exists():
-        urls = [
-            "https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz",
-            "https://github.com/fgnt/mnist/raw/master/mnist.npz",
-        ]
-        ctx = ssl._create_unverified_context()
-        for url in urls:
-            try:
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, context=ctx, timeout=120) as resp:
-                    cache.write_bytes(resp.read())
-                break
-            except Exception:
-                continue
-        else:
-            raise RuntimeError("MNIST 下载失败，请手动放置 mnist.npz")
-
-    with np.load(cache) as data:
-        return data["x_train"], data["y_train"], data["x_test"], data["y_test"]
 
 
 def trainAndTest():
@@ -188,9 +150,10 @@ def trainAndTest():
 
 if __name__ == "__main__":
     tmp_avg_train_acc, tmp_avg_test_acc = 0, 0
-    for i in range(10):
+    loop_count = 1
+    for i in range(loop_count):
         x, y = trainAndTest()
         tmp_avg_train_acc += x
         tmp_avg_test_acc += y
-    print(f"平均训练准确率: {tmp_avg_train_acc / 10:.4f}")
-    print(f"平均测试准确率: {tmp_avg_test_acc / 10:.4f}")
+    print(f"平均训练准确率: {tmp_avg_train_acc / loop_count:.4f}")
+    print(f"平均测试准确率: {tmp_avg_test_acc / loop_count:.4f}")

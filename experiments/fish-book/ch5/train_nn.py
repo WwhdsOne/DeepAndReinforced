@@ -2,6 +2,8 @@
 import sys
 import os
 
+from common.utils import load_mnist
+
 sys.path.append(os.pardir)
 
 import numpy as np
@@ -63,38 +65,6 @@ class TwoLayerNet:
                  "W2": self.layers["Affine2"].dW,
                  "b2": self.layers["Affine2"].db}
         return grads
-
-
-def load_mnist(data_dir: str) -> tuple:
-    """加载 MNIST 数据集（使用 npz 格式）。"""
-    import urllib.request
-    import ssl
-    from pathlib import Path
-
-    root = Path(data_dir)
-    root.mkdir(parents=True, exist_ok=True)
-    cache = root / "mnist.npz"
-
-    if not cache.exists():
-        urls = [
-            "https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz",
-            "https://github.com/fgnt/mnist/raw/master/mnist.npz",
-        ]
-        ctx = ssl._create_unverified_context()
-        for url in urls:
-            try:
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, context=ctx, timeout=120) as resp:
-                    cache.write_bytes(resp.read())
-                break
-            except Exception:
-                continue
-        else:
-            raise RuntimeError("MNIST 下载失败，请手动放置 mnist.npz")
-
-    with np.load(cache) as data:
-        return data["x_train"], data["y_train"], data["x_test"], data["y_test"]
-
 
 def trainAndTest():
     # 超参数

@@ -8,6 +8,8 @@ from common.softmaxLayer import Softmax, SoftmaxWithLoss
 from common.batchNormalizationLayer import BatchNormalizationLayer
 from common.dropout import Dropout
 from common.optimizer import Adam
+from common.PoolingLayer import Pooling
+from common.ConvolutionLeayer import Convolution
 
 # 保持与鱼书一致的别名
 Affine = AffineLayer
