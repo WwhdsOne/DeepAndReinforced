@@ -57,6 +57,7 @@ uv run python train.py \
 | `--weight-decay` | 5e-4 | 权重衰减（L2 正则化） |
 | `--device` | auto | cuda / cpu / auto |
 | `--data-root` | ../data | 数据集所在目录 |
+| `--drop-out` | 0.5 | 随机放弃一批神经元 |
 
 设备选择：
 - M 芯片 Mac 会自动使用 MPS（Metal）加速

@@ -21,7 +21,7 @@ class VGG(nn.Module):
     """
 
     def __init__(self, name="VGG16", in_channels=3, num_classes=200,
-                 fc_channels=None):
+                 fc_channels=None, dropout=0.5):
         super().__init__()
         cfg = VGG_CFGS[name]
         fc_channels = fc_channels or [4096, 4096]
@@ -38,7 +38,7 @@ class VGG(nn.Module):
             fc_layers.extend([
                 nn.Linear(fc_input, ch),
                 nn.ReLU(inplace=True),
-                nn.Dropout(0.5),
+                nn.Dropout(dropout),
             ])
             fc_input = ch
         fc_layers.append(nn.Linear(fc_input, num_classes))

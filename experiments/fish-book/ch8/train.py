@@ -12,6 +12,13 @@ import time
 from pathlib import Path
 
 import torch
+
+# 尝试加载昇腾 NPU 支持（若版本不匹配则静默跳过）
+try:
+    import torch_npu  # noqa: F401
+except Exception:
+    pass
+
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
@@ -35,6 +42,8 @@ def parse_args():
                         help="包含 tiny-imagenet-200 的目录 (默认 ../data)")
     parser.add_argument("--device", default="auto",
                         help="训练设备: cuda, cpu, auto (默认 auto)")
+    parser.add_argument("--dropout", type=float, default=0.5,
+                        help="Dropout 比率 (默认 0.5)")
     return parser.parse_args()
 
 
@@ -91,9 +100,14 @@ def validate(model, loader, criterion, device):
 def main():
     args = parse_args()
 
-    # ── 设备 ─────────────────────────────────────
+    # ── 设备（支持 CUDA / 昇腾 NPU / CPU） ──────
     if args.device == "auto":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif hasattr(torch, "npu") and torch.npu.is_available():
+            device = torch.device("npu")
+        else:
+            device = torch.device("cpu")
     else:
         device = torch.device(args.device)
     print(f"设备: {device}")
@@ -108,7 +122,7 @@ def main():
           f"验证集: {len(val_loader.dataset)} 张")
 
     # ── 模型 ─────────────────────────────────────
-    model = get_model(args.model, num_classes=200).to(device)
+    model = get_model(args.model, num_classes=200, dropout=args.dropout).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=args.lr,
                           momentum=args.momentum,
@@ -124,6 +138,7 @@ def main():
 
     best_acc = 0
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+    total_start = time.time()
 
     for epoch in range(1, args.epochs + 1):
         epoch_start = time.time()
@@ -160,6 +175,8 @@ def main():
     with open(history_path, "w") as f:
         json.dump(history, f, indent=2)
     print(f"训练记录已保存: {history_path}")
+    total_time = time.time() - total_start
+    print(f"总训练时长: {total_time:.0f}s ({total_time/60:.1f}min)")
     print(f"最佳验证准确率: {best_acc:.2f}%")
 
 
