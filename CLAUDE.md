@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 内置工具 | RTK 替代 |
 |---|---|
-| `Grep`（内容搜索） | `rtk grep` |
+| `Grep`（内容搜索） | `rtk rg` |
 | `Read`（读文件） | `rtk read` |
 | `Bash` + `git` | `rtk git` |
 | `Bash` + `gh` | `rtk gh` |
@@ -28,9 +28,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用 rtk 命令
 
 ```bash
-rtk gain                 # token 节省统计
 rtk pytest               # 运行测试
-rtk grep <pattern>       # 代码搜索
+rtk rg <pattern>         # 代码搜索
 rtk git log / diff       # git 操作
 ```
 

@@ -1,128 +1,89 @@
-# 项目说明
+# CLAUDE.md
 
-本仓库用于研究生入学前的算法学习与相关实验。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-当前仓库使用根目录统一的 `uv` Python 工程进行依赖和脚本管理。后续新增的 Python 程序、实验代码和可执行入口，都应尽量接入根目录 `pyproject.toml`，避免每个子目录重复维护虚拟环境和依赖。
+# 项目概述
 
-# 仓库约定
-
-## Python / uv
-
-- 使用仓库根目录的 `pyproject.toml` 和 `uv.lock` 统一管理依赖。
-- 使用 `uv sync --group dev` 安装开发依赖。
-- 使用 `uv run <command>` 执行脚本、测试和工具。
-- 每个算法实验单独放在 `experiments/<experiment-name>/` 下。
-- 每个实验目录内部可以有自己的 `src/`、`tests/`、`README.md`。
-- 新增 Python 包时，优先放在对应实验目录的 `src/` 下，保持实验边界清晰。
-- 训练产物、下载数据和虚拟环境不提交到 git。
-
-## 当前程序：`pic-classify`
-
-- `pic-classify` 是当前仓库中的图片分类实验程序。
-- 代码位置：`experiments/pic-classify/src/pic_classify/`
-- 测试位置：`experiments/pic-classify/tests/`
-- 训练入口：`uv run pic-classify-train`
-- 预测入口：`uv run pic-classify-predict`
-- 数据集来源：`torchvision.datasets.CIFAR10(download=True)`，不再依赖旧的本地 `cifar-10-batches-py` 目录。
-- 数据默认下载到 `experiments/pic-classify/data/`
-- 模型产物默认输出到 `experiments/pic-classify/artifacts/`
-
-### 常用命令
-
-```bash
-uv sync --group dev
-uv run --group dev pytest -q
-uv run pic-classify-train --epochs 5
-uv run pic-classify-predict path/to/image.png
-```
-
-# 工具约定
-
-## RTK - Rust Token Killer
-
-所有命令前缀 `rtk`，替代 Claude Code 内置的同类工具以节省 token。
-
-### 优先级规则
-
-RTK 命令优先于 Claude Code 内置工具，功能重叠时优先使用 RTK：
-
-| Claude Code 内置工具 | RTK 替代命令 | 说明 |
-|---|---|---|
-| `Glob`（文件搜索） | `rtk find` / `rtk tree` / `rtk ls` | 压缩目录输出 |
-| `Grep`（内容搜索） | `rtk grep` | 按文件分组、截断、去空白 |
-| `Read`（读文件） | `rtk read` | 智能过滤，省去无用行 |
-| `Bash` + `git` | `rtk git` | 紧凑 git 输出 |
-| `Bash` + `gh` | `rtk gh` | 紧凑 GitHub CLI 输出 |
-| `Bash` + `curl` | `rtk curl` | 自动检测 JSON，schema-only 模式 |
-| `Bash` + `diff` | `rtk diff` | 仅显示变更行 |
-
-仅当 RTK 无对应命令时（如 `Edit`、`Write`、`Agent` 等写操作和复杂操作），才使用内置工具。
-
-### 常用命令
-
-#### Node.js / Frontend
-
-```bash
-rtk pnpm install / add / run build
-rtk npm run <script>
-rtk npx tsc / eslint / prisma
-rtk vitest run
-rtk next build
-rtk lint
-rtk prettier --check .
-rtk playwright test
-rtk tsc --noEmit
-```
-
-#### Python
-
-```bash
-rtk pytest
-rtk ruff check / format
-rtk mypy .
-rtk pip install / list
-```
-
-#### Rust
-
-```bash
-rtk cargo build / test / clippy / fmt
-```
-
-#### Go
-
-```bash
-rtk go build / test / vet
-rtk golangci-lint run
-```
-
-#### .NET / Ruby
-
-```bash
-rtk dotnet build / test
-rtk rspec / rake / rubocop
-```
-
-#### Infrastructure
-
-```bash
-rtk aws <service> <command>
-rtk docker ps / logs / compose
-rtk kubectl get / describe / logs
-rtk psql <query>
-```
-
-#### Meta Commands
-
-```bash
-rtk gain
-rtk gain --history
-rtk discover
-```
+研究生入学前的深度学习算法学习与实验仓库。使用根目录统一的 `uv` Python 工程管理依赖和脚本入口。
 
 # 语言约定
 
-- 所有回复、解释、代码注释、commit message 均使用中文。
-- 变量名、函数名等遵循项目约定，可保留英文。
-- 代码注释使用中文，除非项目已有英文注释惯例。
-- 错误信息和日志的解读用中文说明。
+- 所有回复、解释、代码注释、commit message 使用中文
+- 变量名、函数名保留英文
+
+# 工具约定：RTK
+
+所有读操作优先使用 `rtk`，替代 Claude Code 内置工具以节省 token：
+
+| 内置工具 | RTK 替代 |
+|---|---|
+| `Grep`（内容搜索） | `rtk rg` |
+| `Read`（读文件） | `rtk read` |
+| `Bash` + `git` | `rtk git` |
+| `Bash` + `gh` | `rtk gh` |
+| `Bash` + `curl` | `rtk curl` |
+
+仅当 RTK 无对应命令时（如 `Edit`、`Write`、`Agent`），才使用内置工具。
+
+## 常用 rtk 命令
+
+```bash
+rtk pytest               # 运行测试
+rtk rg <pattern>         # 代码搜索
+rtk git log / diff       # git 操作
+```
+
+# Python / uv 约定
+
+- Python 3.11+，依赖由 `pyproject.toml` + `uv.lock` 统一管理
+- 安装依赖：`uv sync --group dev`
+- 运行脚本/测试：`uv run <command>`
+- 测试：`uv run --group dev pytest -q`
+- 新增实验放在 `experiments/<实验名>/`，内部维护 `src/`、`tests/`
+- 新增命令行入口在根目录 `pyproject.toml` 的 `[project.scripts]` 注册
+- 训练产物、下载数据、虚拟环境不提交 git
+
+# 当前实验
+
+## pic-classify — CIFAR-10 图片分类
+
+基于 PyTorch + torchvision 的 CNN 分类器。
+
+- 代码：`experiments/pic-classify/src/pic_classify/`
+- 测试：`experiments/pic-classify/tests/`
+- 数据集：`torchvision.datasets.CIFAR10(download=True)`，自动下载到 `experiments/pic-classify/data/`
+- 模型产物：`experiments/pic-classify/artifacts/`
+
+模型架构（`model.py`）：5 层卷积 → AdaptiveAvgPool → Flatten → Linear(128→10)
+
+```bash
+uv run pic-classify-train --epochs 5
+uv run pic-classify-predict path/to/image.png --top-k 3
+```
+
+## neural_network — MNIST 分类
+
+基于 NumPy 从零实现的全连接网络。代码：`experiments/neural_network/src/neural_network/`
+
+```bash
+uv run mnist-train
+uv run mnist-predict path/to/image.png
+uv run mnist-evaluate
+uv run mnist-visualize
+```
+
+## fish-book — 鱼书学习实验
+
+《深度学习入门：基于Python的理论与实现》章节代码，位于 `experiments/fish-book/`：
+- `ch3/` — 神经网络基础（感知机、激活函数）
+- `ch4/` — 梯度计算与优化
+- `ch5/` — 神经网络层实现（乘法层、ReLU、Sigmoid、Softmax、Affine 等）
+- `common/` — 通用工具函数
+
+```bash
+uv run python experiments/fish-book/ch5/multiLayer.py
+```
+
+# 学习日志
+
+每日学习进度记录在 `learning-logs/`，格式 `YYYY-MM-DD.md`。
