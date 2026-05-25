@@ -25,12 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 仅当 RTK 无对应命令时（如 `Edit`、`Write`、`Agent`），才使用内置工具。
 
-## 常用 rtk 命令
-
-```bash
-rtk pytest               # 运行测试
-rtk git log / diff       # git 操作
-```
+请用`rg`替代`grep`,以后不要再使用`grep`了。
 
 # Python / uv 约定
 
