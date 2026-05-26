@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 # 项目概述
 
 研究生入学前的深度学习算法学习与实验仓库。使用根目录统一的 `uv` Python 工程管理依赖和脚本入口。
