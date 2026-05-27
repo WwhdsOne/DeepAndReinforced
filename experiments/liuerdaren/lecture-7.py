@@ -25,7 +25,7 @@ if __name__ == '__main__':
     criterion = torch.nn.BCEWithLogitsLoss(reduction='mean')
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-    xy = np.loadtxt('diabetes.csv.gz', delimiter=',', dtype=np.float32)
+    xy = np.loadtxt('../data/diabetes.csv.gz', delimiter=',', dtype=np.float32)
     # 假设 xy 是这样的数据（特征列 + 标签列）：
     # xy = [[特征1, 特征2, ..., 特征n, 标签],
     #       [特征1, 特征2, ..., 特征n, 标签],
