@@ -1,5 +1,9 @@
 pic-classify/cifar-10-batches-py
 
+# Python 缓存
+__pycache__/
+*.pyc
+
 # 构建产物
 /bin/
 /build/
