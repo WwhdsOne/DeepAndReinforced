@@ -13,7 +13,7 @@ class Model(nn.Module):
         self.embedding_size = embedding_size
         self.num_class = num_class
         self.emb = nn.Embedding(input_size, embedding_size)
-        self.rnn = nn.GRU(input_size=self.embedding_size,
+        self.gru = nn.GRU(input_size=self.embedding_size,
                            hidden_size=self.hidden_size,
                            num_layers=num_layers,
                            batch_first=True)
@@ -21,7 +21,7 @@ class Model(nn.Module):
 
     def forward(self, x):
         x = self.emb(x)
-        x, _ = self.rnn(x)
+        x, _ = self.gru(x)
         x = self.fc(x)
         return x.view(-1, self.num_class)
 
