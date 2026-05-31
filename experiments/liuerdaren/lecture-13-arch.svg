@@ -1,0 +1,68 @@
+<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;">
+  <defs>
+    <linearGradient id="g-input" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8f4f8"/>
+      <stop offset="100%" stop-color="#d1ecf1"/>
+    </linearGradient>
+    <linearGradient id="g-embed" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef3e2"/>
+      <stop offset="100%" stop-color="#fde8c8"/>
+    </linearGradient>
+    <linearGradient id="g-lstm" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e6f3e6"/>
+      <stop offset="100%" stop-color="#c8e6c9"/>
+    </linearGradient>
+    <linearGradient id="g-fc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e5f5"/>
+      <stop offset="100%" stop-color="#e1bee7"/>
+    </linearGradient>
+    <linearGradient id="g-out" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffebee"/>
+      <stop offset="100%" stop-color="#ffcdd2"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+    </marker>
+  </defs>
+
+  <!-- 标题 -->
+  <text x="400" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">模型架构图</text>
+
+  <!-- ① Input -->
+  <rect x="275" y="50" width="250" height="56" rx="8" fill="url(#g-input)" stroke="#90caf9" stroke-width="2"/>
+  <text x="400" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#1565c0">Input</text>
+  <text x="400" y="90" text-anchor="middle" font-size="11" fill="#546e7a">"This movie is amazing" → [w1, w2, w3, w4]</text>
+
+  <line x1="400" y1="106" x2="400" y2="138" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ② Embedding -->
+  <rect x="250" y="140" width="300" height="56" rx="8" fill="url(#g-embed)" stroke="#ffcc80" stroke-width="2"/>
+  <text x="400" y="162" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100">Embedding</text>
+  <text x="400" y="180" text-anchor="middle" font-size="11" fill="#546e7a">vocab_size → 64  |  padding_idx=0</text>
+
+  <line x1="400" y1="196" x2="400" y2="228" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ③ Bi-LSTM -->
+  <rect x="200" y="230" width="400" height="80" rx="8" fill="url(#g-lstm)" stroke="#81c784" stroke-width="2"/>
+  <text x="400" y="254" text-anchor="middle" font-size="13" font-weight="bold" fill="#2e7d32">Bi-directional LSTM (2 layers)</text>
+  <text x="400" y="274" text-anchor="middle" font-size="11" fill="#546e7a">input=64 → hidden=128  |  dropout=0.5</text>
+  <text x="380" y="296" text-anchor="end" font-size="11" fill="#888">LSTM₁ → LSTM₂ →</text>
+  <text x="420" y="296" text-anchor="start" font-size="11" fill="#888">← LSTM₁ ← LSTM₂</text>
+
+  <line x1="400" y1="310" x2="400" y2="342" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ④ FC -->
+  <rect x="225" y="344" width="350" height="56" rx="8" fill="url(#g-fc)" stroke="#ce93d8" stroke-width="2"/>
+  <text x="400" y="366" text-anchor="middle" font-size="13" font-weight="bold" fill="#6a1b9a">Fully Connected</text>
+  <text x="400" y="384" text-anchor="middle" font-size="11" fill="#546e7a">256（128×2 双向拼接）→ 5</text>
+
+  <line x1="400" y1="400" x2="400" y2="432" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ⑤ Output -->
+  <rect x="150" y="434" width="500" height="56" rx="8" fill="url(#g-out)" stroke="#ef9a9a" stroke-width="2"/>
+  <text x="400" y="456" text-anchor="middle" font-size="13" font-weight="bold" fill="#c62828">Output（5 classes）</text>
+  <text x="400" y="474" text-anchor="middle" font-size="11" fill="#546e7a">negative │ somewhat negative │ neutral │ somewhat positive │ positive</text>
+
+  <!-- 底部信息 -->
+  <text x="400" y="510" text-anchor="middle" font-size="11" fill="#888">Loss: CrossEntropyLoss ｜ Optimizer: Adam(lr=0.001)</text>
+</svg>
