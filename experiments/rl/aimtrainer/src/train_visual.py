@@ -195,7 +195,7 @@ def train(total_timesteps=200_000, render_freq=10_000, target_radius=0.06):
 
     model = PPO("MlpPolicy", train_env, verbose=1,
                 n_steps=2048, batch_size=64, n_epochs=10,
-                learning_rate=3e-4, ent_coef=0.1, device="auto")
+                learning_rate=3e-4, ent_coef=0.01, device="auto")
 
     render_cb = LiveRenderCallback(
         train_env,

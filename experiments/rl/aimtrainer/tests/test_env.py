@@ -94,7 +94,7 @@ class TestAimTrainerEnv:
         assert np.isclose(env.action_step, 0.016)
 
     def test_distance_delta_reward_penalizes_moving_away(self):
-        env = AimTrainerEnv(max_steps=100, n_targets=1, target_radius=0.04)
+        env = AimTrainerEnv(max_steps=100, n_targets=1, target_radius=0.04, lock_on_speed=0.0)
         env.reset(seed=0)
         env.targets[0] = np.array([0.6, 0.5], dtype=np.float32)
         env.target_alive[0] = True
@@ -115,19 +115,22 @@ class TestAimTrainerEnv:
             time_penalty=0.0,
             progress_coef=0.0,
             distance_delta_coef=1.0,
+            lock_on_speed=0.0,
         )
         env.reset(seed=0)
         env.targets[0] = np.array([0.6, 0.5], dtype=np.float32)
         env.target_alive[0] = True
         env.crosshair = np.array([0.5, 0.5], dtype=np.float32)
-        env._prev_nearest_distance = 0.1
-        env._best_nearest_distance = 0.1
+        env._locked_target_idx = 0
+        env._prev_locked_distance = 0.1
+        env._best_locked_distance = 0.1
 
         _, reward_closer, _, _, info_closer = env.step(np.array([0.01, 0.0], dtype=np.float32))
 
         env.crosshair = np.array([0.5, 0.5], dtype=np.float32)
-        env._prev_nearest_distance = 0.1
-        env._best_nearest_distance = 0.1
+        env._locked_target_idx = 0
+        env._prev_locked_distance = 0.1
+        env._best_locked_distance = 0.1
         _, reward_away, _, _, info_away = env.step(np.array([-0.01, 0.0], dtype=np.float32))
 
         assert info_closer["reward_distance_delta"] > 0
@@ -152,7 +155,7 @@ class TestAimTrainerEnv:
         assert reward <= -0.6
 
     def test_step_info_contains_reward_breakdown(self):
-        env = AimTrainerEnv(max_steps=100, n_targets=1, target_radius=0.04)
+        env = AimTrainerEnv(max_steps=100, n_targets=1, target_radius=0.04, lock_on_speed=0.0)
         env.reset(seed=0)
         _, reward, _, _, info = env.step(np.array([env.action_step, 0.0], dtype=np.float32))
 

@@ -1,64 +1,39 @@
-pic-classify/cifar-10-batches-py
-
-# Python 缓存
+# === Python ===
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.eggs/
+*.so
 
-# 构建产物
-/bin/
-/build/
-/dist/
-/backend/public/
-*.exe
-*.test
-*.out
-/server
-node_modules/
-long.tar.gz
-*.tar.gz
-pixel-assets/scripts/__pycache__
-scripts/__pycache__/
-backend/reports
-backend/server
-backend/long
-# 依赖
-vendor/
+# === 虚拟环境 ===
 .venv/
+venv/
+env/
 
-# IDE
-*/.idea
+# === IDE / 编辑器 ===
 .idea/
 .vscode/
-**/.vscode/
 *.swp
 *.swo
-.superpowers/
-wclick.conf
 
-# OS
+# === OS ===
 .DS_Store
 Thumbs.db
 
-# 临时/日志
-*.log
-*.tmp
-*.bak
-.pytest_cache/
+# === 产物（不入 git）===
 experiments/*/artifacts/
 experiments/*/data/
-experiments/fish-book/data/
+*.log
 
-# 测试覆盖率
+# === 测试 ===
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 coverage.out
 coverage.html
 
-# 配置（含敏感信息）
-configs/dev.yaml
-configs/*.env
+# === 敏感配置 ===
 *.env
-/backend/config.yaml
-/backend/config.local.yaml
-/backend/config.test.yaml
 
-# Git hooks
-.git/hooks/
+# === 工具 ===
+.qoder/

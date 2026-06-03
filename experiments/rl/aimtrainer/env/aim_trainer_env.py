@@ -32,6 +32,7 @@ class AimTrainerEnv(gym.Env):
     near_zone_min : float 靠近奖励半径下限（默认 0.06）
     distance_delta_coef : float 每步距离变化奖励系数，朝目标更近给正反馈，变远给负反馈（默认 0.6）
     regress_penalty_scale : float 远离目标时的额外惩罚倍数（默认 1.5）
+    lock_on_speed : float 锁定后每步自动向圆心移动的比例（0=纯手动，默认 0.4）
     render_mode : str | None  渲染模式 ("human" / "rgb_array")
     """
 
@@ -43,7 +44,7 @@ class AimTrainerEnv(gym.Env):
                  efficiency_coef=2.0, action_step=None,
                  min_action_step=0.004, near_zone_scale=3.0,
                  near_zone_min=0.06, distance_delta_coef=0.6,
-                 regress_penalty_scale=1.5,
+                 regress_penalty_scale=1.5, lock_on_speed=0.4,
                  render_mode=None):
         super().__init__()
 
@@ -60,6 +61,7 @@ class AimTrainerEnv(gym.Env):
         self.near_zone_min = near_zone_min
         self.distance_delta_coef = distance_delta_coef
         self.regress_penalty_scale = regress_penalty_scale
+        self.lock_on_speed = lock_on_speed
 
         # 状态：[crosshair_xy(2), target_xy_alive * n_targets(3 each)]
         obs_size = 2 + n_targets * 3 + 2
@@ -88,9 +90,8 @@ class AimTrainerEnv(gym.Env):
         self.current_step = 0
         self.total_hits = 0
         self._steps_since_last_hit = 0
-        self._proximity_claimed = np.zeros(n_targets, dtype=bool)  # 防止重复蹭分
-        self._best_nearest_distance = np.inf
-        self._prev_nearest_distance = np.inf
+        self._proximity_claimed = np.zeros(n_targets, dtype=bool)
+        self._locked_target_idx = -1  # 当前锁定的目标索引，-1 表示无锁定
 
         # 渲染缓存
         self._fig = None
@@ -131,8 +132,9 @@ class AimTrainerEnv(gym.Env):
         self.total_hits = 0
         self._steps_since_last_hit = 0
         self._proximity_claimed[:] = False
-        self._best_nearest_distance = np.inf
-        self._prev_nearest_distance = np.inf
+        self._locked_target_idx = -1
+        self._prev_locked_distance = np.inf
+        self._best_locked_distance = np.inf
         self.crosshair = np.array([0.5, 0.5], dtype=np.float32)
 
         for i in range(self.n_targets):
@@ -150,6 +152,18 @@ class AimTrainerEnv(gym.Env):
         self.crosshair = np.clip(self.crosshair + action_arr, 0.0, 1.0)
         actual_delta = self.crosshair - old_crosshair
 
+        # 锁定目标后自动拉向圆心：动作变成在自动方向上的微调
+        if (self._locked_target_idx >= 0
+                and self.target_alive[self._locked_target_idx]
+                and self.lock_on_speed > 0):
+            target_pos = self.targets[self._locked_target_idx]
+            to_target = target_pos - self.crosshair
+            dist_to_target = float(np.sqrt(np.sum(to_target ** 2)))
+            if dist_to_target > 1e-6:
+                # 每步向圆心移动剩余距离的 lock_on_speed 比例（不会越过圆心）
+                pull = to_target * self.lock_on_speed
+                self.crosshair = np.clip(self.crosshair + pull, 0.0, 1.0)
+
         # 发呆惩罚：按实际位移计算，顶墙或卡边时也算无效动作。
         action_norm = float(np.sqrt(np.sum(actual_delta ** 2)))
         idle_penalty = 0.0
@@ -163,33 +177,58 @@ class AimTrainerEnv(gym.Env):
         hit_count = 0
         self._steps_since_last_hit += 1
 
-        # 靠近奖励：扩大引导圈，并奖励朝最近目标的持续逼近。
+        # 靠近奖励：锁定目标 + 距离变化 + 一次性引导
         if len(alive_idx) > 0:
             diffs_all = self.crosshair - self.targets[alive_idx]
             dists = np.sqrt(np.sum(diffs_all ** 2, axis=1))
             nearest_idx_in_alive = int(np.argmin(dists))
             nearest_idx = alive_idx[nearest_idx_in_alive]
             nearest = float(dists[nearest_idx_in_alive])
+
+            # 锁定目标：无锁或目标已死 → 锁定最近；仅当其他目标近得多时才切换
+            if (self._locked_target_idx < 0
+                    or not self.target_alive[self._locked_target_idx]
+                    or nearest < dists[np.where(alive_idx == self._locked_target_idx)[0][0]] * 0.5):
+                old_locked = self._locked_target_idx
+                self._locked_target_idx = nearest_idx
+                if self._locked_target_idx != old_locked:
+                    # 切换目标时重置距离追踪，避免跨目标的距离跳变
+                    self._prev_locked_distance = nearest
+                    self._best_locked_distance = nearest
+
+            locked_idx_in_alive = np.where(alive_idx == self._locked_target_idx)[0][0]
+            locked_dist = float(dists[locked_idx_in_alive])
+
             near_zone = max(
                 self.target_radius * self.near_zone_scale,
                 self.near_zone_min,
             )
-            if np.isfinite(self._prev_nearest_distance):
-                distance_delta = (self._prev_nearest_distance - nearest) / near_zone
+
+            # 距离变化奖励：相对于锁定目标，靠近奖励/远离惩罚
+            if hasattr(self, '_prev_locked_distance') and np.isfinite(self._prev_locked_distance):
+                distance_delta = (self._prev_locked_distance - locked_dist) / near_zone
                 distance_delta_reward = self.distance_delta_coef * distance_delta
                 if distance_delta_reward < 0.0:
                     distance_delta_reward *= self.regress_penalty_scale
                 reward += distance_delta_reward
-            if np.isfinite(self._best_nearest_distance) and nearest < self._best_nearest_distance:
-                improvement = self._best_nearest_distance - nearest
-                progress_reward += self.progress_coef * (improvement / near_zone)
-                reward += self.progress_coef * (improvement / near_zone)
-            self._best_nearest_distance = nearest
-            self._prev_nearest_distance = nearest
-            if nearest < near_zone and not self._proximity_claimed[nearest_idx]:
-                progress_reward += self.progress_coef * (1.0 - nearest / near_zone)
-                reward += self.progress_coef * (1.0 - nearest / near_zone)
-                self._proximity_claimed[nearest_idx] = True
+
+            # 新纪录奖励：突破锁定目标的最优距离
+            if hasattr(self, '_best_locked_distance') and np.isfinite(self._best_locked_distance):
+                if locked_dist < self._best_locked_distance:
+                    improvement = self._best_locked_distance - locked_dist
+                    progress_reward += self.progress_coef * (improvement / near_zone)
+                    reward += self.progress_coef * (improvement / near_zone)
+
+            self._prev_locked_distance = locked_dist
+            self._best_locked_distance = min(
+                getattr(self, '_best_locked_distance', np.inf), locked_dist
+            )
+
+            # 一次性靠近奖励（锁定目标进入引导圈）
+            if locked_dist < near_zone and not self._proximity_claimed[self._locked_target_idx]:
+                progress_reward += self.progress_coef * (1.0 - locked_dist / near_zone)
+                reward += self.progress_coef * (1.0 - locked_dist / near_zone)
+                self._proximity_claimed[self._locked_target_idx] = True
 
         # 命中检测
         for i in range(self.n_targets):
@@ -205,10 +244,11 @@ class AimTrainerEnv(gym.Env):
                 self.total_hits += 1
                 self.target_alive[i] = False
                 self._spawn_target(i)
-                self._steps_since_last_hit = 0  # 重置计时
-                self._proximity_claimed[i] = False  # 新目标可再次拿靠近奖励
-                self._best_nearest_distance = np.inf
-                self._prev_nearest_distance = np.inf
+                self._steps_since_last_hit = 0
+                self._proximity_claimed[i] = False
+                # 命中后解锁，下一轮重新选择目标
+                if self._locked_target_idx == i:
+                    self._locked_target_idx = -1
 
         # 时间惩罚（阶梯递增：越晚越贵，催促快速命中）
         progress_ratio = self.current_step / max(self.max_steps, 1)
