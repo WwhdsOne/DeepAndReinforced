@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Aim Trainer — 瞄准训练</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+    overflow: hidden;
+  }
+  #game-container {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    border: 2px solid #16213e;
+    border-radius: 12px;
+    background: #0f3460;
+    cursor: crosshair;
+    box-shadow: 0 0 30px rgba(83, 127, 231, 0.3);
+  }
+  canvas {
+    display: block;
+    border-radius: 10px;
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    width: 600px;
+    margin-top: 16px;
+    color: #e0e0e0;
+    font-size: 16px;
+  }
+  .hud-item {
+    background: #16213e;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 120px;
+    text-align: center;
+  }
+  .hud-item span {
+    color: #53a8b6;
+    font-weight: bold;
+    font-size: 20px;
+  }
+  #message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #53a8b6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  #controls {
+    margin-top: 12px;
+    display: flex;
+    gap: 12px;
+  }
+  button {
+    background: #16213e;
+    color: #53a8b6;
+    border: 1px solid #53a8b6;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  button:hover {
+    background: #53a8b6;
+    color: #1a1a2e;
+  }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game" width="600" height="600"></canvas>
+  <div id="message">HIT!</div>
+</div>
+<div id="hud">
+  <div class="hud-item">🎯 命中 <span id="hits">0</span></div>
+  <div class="hud-item">⏱️ 时间 <span id="timer">60</span>s</div>
+  <div class="hud-item">📊 命中率 <span id="accuracy">0</span>%</div>
+  <div class="hud-item">🔥 连击 <span id="combo">0</span></div>
+</div>
+<div id="controls">
+  <button onclick="startGame()">🔄 开始游戏</button>
+  <button onclick="toggleMode()">📐 模式切换</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const W = canvas.width;
+const H = canvas.height;
+
+// ── 游戏状态 ──
+const TARGET_RADIUS = 18;
+const N_TARGETS = 5;
+let targets = [];
+let crosshair = { x: W/2, y: H/2 };
+let hits = 0;
+let clicks = 0;
+let combo = 0;
+let timeLeft = 60;
+let gameActive = false;
+let timerId = null;
+let mode = "click"; // "click" | "aim" — aim 模式下老鼠靠近即命中
+
+// ── 中心点（准星） ──
+let mx = W/2, my = H/2;
+
+// ── 生成随机目标 ──
+function spawnTarget() {
+  return {
+    x: 70 + Math.random() * (W - 140),
+    y: 70 + Math.random() * (H - 140),
+    alive: true
+  };
+}
+
+function resetGame() {
+  targets = [];
+  for (let i = 0; i < N_TARGETS; i++) targets.push(spawnTarget());
+  hits = 0;
+  clicks = 0;
+  combo = 0;
+  timeLeft = 60;
+  gameActive = false;
+  updateHUD();
+}
+
+// ── 绘制 ──
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // 背景网格
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < W; i += 40) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+  }
+  for (let j = 0; j < H; j += 40) {
+    ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(W, j); ctx.stroke();
+  }
+
+  // 目标
+  targets.forEach(t => {
+    if (!t.alive) return;
+    // 外圈光晕
+    const gradient = ctx.createRadialGradient(t.x, t.y, TARGET_RADIUS*0.3, t.x, t.y, TARGET_RADIUS);
+    gradient.addColorStop(0, "rgba(255,80,80,0.8)");
+    gradient.addColorStop(0.6, "rgba(255,40,40,0.4)");
+    gradient.addColorStop(1, "rgba(255,30,30,0)");
+
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, TARGET_RADIUS*1.5, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // 外圈
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, TARGET_RADIUS, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ff4444";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 内圈
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, TARGET_RADIUS * 0.5, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ff8888";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 十字准心
+    ctx.strokeStyle = "#ff6666";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(t.x - TARGET_RADIUS*1.2, t.y);
+    ctx.lineTo(t.x - TARGET_RADIUS*0.3, t.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(t.x + TARGET_RADIUS*0.3, t.y);
+    ctx.lineTo(t.x + TARGET_RADIUS*1.2, t.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(t.x, t.y - TARGET_RADIUS*1.2);
+    ctx.lineTo(t.x, t.y - TARGET_RADIUS*0.3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(t.x, t.y + TARGET_RADIUS*0.3);
+    ctx.lineTo(t.x, t.y + TARGET_RADIUS*1.2); ctx.stroke();
+  });
+
+  // 老鼠准星（玩家十字线）
+  const sz = 14;
+  ctx.strokeStyle = "#53a8b6";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(mx - sz, my); ctx.lineTo(mx + sz, my); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mx, my - sz); ctx.lineTo(mx, my + sz); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(mx, my, sz * 0.7, 0, Math.PI * 2);
+  ctx.strokeStyle = "#53a8b6";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // aim 模式额外提示
+  if (mode === "aim") {
+    ctx.strokeStyle = "rgba(83,168,182,0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(mx, my, TARGET_RADIUS + 2, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ── 点击处理 ──
+function handleClick(e) {
+  if (!gameActive) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  clicks++;
+
+  let didHit = false;
+  targets.forEach(t => {
+    if (!t.alive) return;
+    const dist = Math.hypot(t.x - sx, t.y - sy);
+    if (dist < TARGET_RADIUS) {
+      t.alive = false;
+      hits++;
+      combo++;
+      didHit = true;
+      // 刷新一个新的目标
+      targets.push(spawnTarget());
+      // 显示命中效果
+      showHitMsg(t.x, t.y);
+    }
+  });
+
+  if (!didHit) {
+    combo = 0;
+  }
+  updateHUD();
+}
+
+// ── 移动处理（仅 aim 模式下靠近即命中 + 更新准星位置） ──
+function handleMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  mx = e.clientX - rect.left;
+  my = e.clientY - rect.top;
+  if (!gameActive) return;
+
+  if (mode === "aim") {
+    clicks++;
+    targets.forEach(t => {
+      if (!t.alive) return;
+      const dist = Math.hypot(t.x - mx, t.y - my);
+      if (dist < TARGET_RADIUS) {
+        t.alive = false;
+        hits++;
+        combo++;
+        targets.push(spawnTarget());
+        showHitMsg(t.x, t.y);
+      }
+    });
+    updateHUD();
+  }
+}
+
+function showHitMsg(x, y) {
+  const msg = document.getElementById("message");
+  msg.style.left = x + "px";
+  msg.style.top = (y - 20) + "px";
+  msg.style.opacity = "1";
+  setTimeout(() => { msg.style.opacity = "0"; }, 300);
+}
+
+// ── HUD 更新 ──
+function updateHUD() {
+  document.getElementById("hits").textContent = hits;
+  document.getElementById("timer").textContent = timeLeft;
+  document.getElementById("combo").textContent = combo;
+  const acc = clicks > 0 ? (hits / clicks * 100).toFixed(1) : "0.0";
+  document.getElementById("accuracy").textContent = acc;
+}
+
+// ── 游戏循环 ──
+function gameLoop() {
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// ── 计时器 ──
+function startTimer() {
+  clearInterval(timerId);
+  timerId = setInterval(() => {
+    timeLeft--;
+    updateHUD();
+    if (timeLeft <= 0) {
+      clearInterval(timerId);
+      gameActive = false;
+      alert(`游戏结束！\n命中: ${hits} | 点击: ${clicks} | 连击: ${combo}\n命中率: ${(hits/clicks*100).toFixed(1)}%`);
+    }
+  }, 1000);
+}
+
+// ── 全局控制 ──
+function startGame() {
+  resetGame();
+  gameActive = true;
+  startTimer();
+}
+
+function toggleMode() {
+  mode = mode === "click" ? "aim" : "click";
+  const btns = document.querySelectorAll("button");
+  btns[1].textContent = mode === "click" ? "📐 模式切换 (瞄准命中)" : "📐 模式切换 (点击射击)";
+}
+
+// ── 事件绑定 ──
+canvas.addEventListener("click", handleClick);
+canvas.addEventListener("mousemove", handleMove);
+canvas.addEventListener("mouseleave", () => { mx = -999; my = -999; });
+
+// ── 启动 ──
+resetGame();
+updateHUD();
+gameLoop();
+startGame();
+</script>
+</body>
+</html>

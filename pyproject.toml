@@ -5,11 +5,17 @@ description = "Machine learning experiments managed with uv."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "eel>=0.18.2",
+    "gymnasium>=1.0.0",
     "kagglehub>=1.0.1",
     "matplotlib>=3.10.9",
+    "mss>=10.2.0",
     "numpy<2.4",
+    "opencv-python>=4.13.0.92",
     "pandas-stubs~=3.0.3",
     "pillow>=11.2.1",
+    "pygame>=2.6.0",
+    "stable-baselines3>=2.3.0",
     "torch>=2.7.0",
     "torchvision>=0.22.0",
     "tqdm>=4.67.0",
