@@ -8,6 +8,14 @@
 
 直接打开 `src/aim_trainer_game.html`，用鼠标瞄准点击。支持两种模式：点击射击 / 瞄准即命中。
 
+### 🤖 AI 推理演示（训练好的模型在浏览器中自动瞄准）
+
+```bash
+uv run python experiments/rl/aimtrainer/src/ai_play.py
+```
+
+打开后点击「🤖 AI 演示」按钮，Python 端加载训练好的 PPO 模型，实时推理并通过 eel 推送状态到浏览器渲染。准星自动移动、锁定目标、命中射击。
+
 ### 🎮 Pygame 人类对战
 
 ```bash
@@ -49,7 +57,8 @@ aimtrainer/
   env/
     aim_trainer_env.py    # Gymnasium 环境核心
   src/
-    aim_trainer_game.html # 🌐 浏览器瞄准游戏
+    aim_trainer_game.html # 🌐 浏览器瞄准游戏（人类 + AI 双模式）
+    ai_play.py            # 🤖 AI 推理演示（模型驱动浏览器）
     train.py              # 📊 SB3 PPO 纯训练
     train_visual.py       # 👁️ 训练 + 实时渲染
     human_play.py         # 🎮 Pygame 人类对战

@@ -26,10 +26,7 @@
     cursor: crosshair;
     box-shadow: 0 0 30px rgba(83, 127, 231, 0.3);
   }
-  canvas {
-    display: block;
-    border-radius: 10px;
-  }
+  canvas { display: block; border-radius: 10px; }
   #hud {
     display: flex;
     justify-content: space-between;
@@ -42,7 +39,7 @@
     background: #16213e;
     padding: 8px 16px;
     border-radius: 8px;
-    min-width: 120px;
+    min-width: 100px;
     text-align: center;
   }
   .hud-item span {
@@ -52,8 +49,7 @@
   }
   #message {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     font-size: 24px;
     color: #53a8b6;
@@ -63,22 +59,24 @@
   }
   #controls {
     margin-top: 12px;
-    display: flex;
-    gap: 12px;
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
   }
   button {
     background: #16213e;
     color: #53a8b6;
     border: 1px solid #53a8b6;
-    padding: 8px 20px;
+    padding: 8px 18px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s;
   }
-  button:hover {
-    background: #53a8b6;
-    color: #1a1a2e;
+  button:hover { background: #53a8b6; color: #1a1a2e; }
+  button.active { background: #53a8b6; color: #1a1a2e; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #status-bar {
+    width: 600px; margin-top: 8px; font-size: 12px; color: #666;
+    text-align: center; min-height: 16px;
   }
 </style>
 </head>
@@ -88,39 +86,53 @@
   <div id="message">HIT!</div>
 </div>
 <div id="hud">
-  <div class="hud-item">🎯 命中 <span id="hits">0</span></div>
-  <div class="hud-item">⏱️ 时间 <span id="timer">60</span>s</div>
-  <div class="hud-item">📊 命中率 <span id="accuracy">0</span>%</div>
-  <div class="hud-item">🔥 连击 <span id="combo">0</span></div>
+  <div class="hud-item" id="hud-hits">🎯 命中 <span id="hits">0</span></div>
+  <div class="hud-item" id="hud-time">⏱️ 时间 <span id="timer">60</span>s</div>
+  <div class="hud-item" id="hud-acc">📊 命中率 <span id="accuracy">0</span>%</div>
+  <div class="hud-item" id="hud-combo">🔥 连击 <span id="combo">0</span></div>
 </div>
 <div id="controls">
   <button onclick="startGame()">🔄 开始游戏</button>
-  <button onclick="toggleMode()">📐 模式切换</button>
+  <button onclick="toggleMode()" id="btn-mode">📐 模式切换</button>
+  <button onclick="toggleAI()" id="btn-ai">🤖 AI 演示</button>
 </div>
+<div id="status-bar"></div>
+
+<!-- eel.js — 仅在通过 ai_play.py 启动时存在 -->
+<script type="text/javascript" src="/eel.js"></script>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const W = canvas.width;
-const H = canvas.height;
+const W = canvas.width, H = canvas.height;
+
+// ── 游戏常量 ──
+const TARGET_RADIUS_PX = 18;
+const N_TARGETS = 5;
 
 // ── 游戏状态 ──
-const TARGET_RADIUS = 18;
-const N_TARGETS = 5;
 let targets = [];
 let crosshair = { x: W/2, y: H/2 };
-let hits = 0;
-let clicks = 0;
-let combo = 0;
+let hits = 0, clicks = 0, combo = 0;
 let timeLeft = 60;
 let gameActive = false;
 let timerId = null;
-let mode = "click"; // "click" | "aim" — aim 模式下老鼠靠近即命中
-
-// ── 中心点（准星） ──
+let mode = "click";   // "click" | "aim" | "ai"
 let mx = W/2, my = H/2;
 
-// ── 生成随机目标 ──
+// ── AI 模式状态 ──
+let aiActive = false;
+let aiSteps = 0;
+let aiMaxSteps = 500;
+let aiTotalReward = 0;
+
+// ── 检测 eel 是否可用 ──
+const HAS_EEL = typeof eel !== "undefined";
+
+// ══════════════════════════════════════════════════════
+//  辅助函数
+// ══════════════════════════════════════════════════════
+
 function spawnTarget() {
   return {
     x: 70 + Math.random() * (W - 140),
@@ -132,15 +144,21 @@ function spawnTarget() {
 function resetGame() {
   targets = [];
   for (let i = 0; i < N_TARGETS; i++) targets.push(spawnTarget());
-  hits = 0;
-  clicks = 0;
-  combo = 0;
+  hits = clicks = combo = 0;
   timeLeft = 60;
   gameActive = false;
+  mx = my = W/2;
   updateHUD();
 }
 
-// ── 绘制 ──
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+// ══════════════════════════════════════════════════════
+//  绘制
+// ══════════════════════════════════════════════════════
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
 
@@ -158,117 +176,106 @@ function draw() {
   targets.forEach(t => {
     if (!t.alive) return;
     // 外圈光晕
-    const gradient = ctx.createRadialGradient(t.x, t.y, TARGET_RADIUS*0.3, t.x, t.y, TARGET_RADIUS);
-    gradient.addColorStop(0, "rgba(255,80,80,0.8)");
-    gradient.addColorStop(0.6, "rgba(255,40,40,0.4)");
-    gradient.addColorStop(1, "rgba(255,30,30,0)");
-
+    const grad = ctx.createRadialGradient(t.x, t.y, TARGET_RADIUS_PX*0.3, t.x, t.y, TARGET_RADIUS_PX);
+    grad.addColorStop(0, "rgba(255,80,80,0.8)");
+    grad.addColorStop(0.6, "rgba(255,40,40,0.4)");
+    grad.addColorStop(1, "rgba(255,30,30,0)");
     ctx.beginPath();
-    ctx.arc(t.x, t.y, TARGET_RADIUS*1.5, 0, Math.PI * 2);
-    ctx.fillStyle = gradient;
-    ctx.fill();
+    ctx.arc(t.x, t.y, TARGET_RADIUS_PX*1.5, 0, Math.PI*2);
+    ctx.fillStyle = grad; ctx.fill();
 
-    // 外圈
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, TARGET_RADIUS, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ff4444";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    // 外圈 + 内圈
+    ctx.beginPath(); ctx.arc(t.x, t.y, TARGET_RADIUS_PX, 0, Math.PI*2);
+    ctx.strokeStyle = "#ff4444"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(t.x, t.y, TARGET_RADIUS_PX*0.5, 0, Math.PI*2);
+    ctx.strokeStyle = "#ff8888"; ctx.lineWidth = 1.5; ctx.stroke();
 
-    // 内圈
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, TARGET_RADIUS * 0.5, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ff8888";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    // 十字线
+    ctx.strokeStyle = "#ff6666"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(t.x-TARGET_RADIUS_PX*1.2, t.y);
+    ctx.lineTo(t.x-TARGET_RADIUS_PX*0.3, t.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(t.x+TARGET_RADIUS_PX*0.3, t.y);
+    ctx.lineTo(t.x+TARGET_RADIUS_PX*1.2, t.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(t.x, t.y-TARGET_RADIUS_PX*1.2);
+    ctx.lineTo(t.x, t.y-TARGET_RADIUS_PX*0.3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(t.x, t.y+TARGET_RADIUS_PX*0.3);
+    ctx.lineTo(t.x, t.y+TARGET_RADIUS_PX*1.2); ctx.stroke();
 
-    // 十字准心
-    ctx.strokeStyle = "#ff6666";
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(t.x - TARGET_RADIUS*1.2, t.y);
-    ctx.lineTo(t.x - TARGET_RADIUS*0.3, t.y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(t.x + TARGET_RADIUS*0.3, t.y);
-    ctx.lineTo(t.x + TARGET_RADIUS*1.2, t.y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(t.x, t.y - TARGET_RADIUS*1.2);
-    ctx.lineTo(t.x, t.y - TARGET_RADIUS*0.3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(t.x, t.y + TARGET_RADIUS*0.3);
-    ctx.lineTo(t.x, t.y + TARGET_RADIUS*1.2); ctx.stroke();
+    // AI 模式：高亮锁定的目标
+    if (mode === "ai" && t._locked) {
+      ctx.beginPath(); ctx.arc(t.x, t.y, TARGET_RADIUS_PX*2, 0, Math.PI*2);
+      ctx.strokeStyle = "rgba(255,215,0,0.7)"; ctx.lineWidth = 2.5;
+      ctx.setLineDash([6, 3]); ctx.stroke(); ctx.setLineDash([]);
+    }
   });
 
-  // 老鼠准星（玩家十字线）
-  const sz = 14;
-  ctx.strokeStyle = "#53a8b6";
+  // 准星
+  const cx = mx, cy = my, sz = 14;
+  ctx.strokeStyle = mode === "ai" ? "#ffd700" : "#53a8b6";
   ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(mx - sz, my); ctx.lineTo(mx + sz, my); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(mx, my - sz); ctx.lineTo(mx, my + sz); ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(mx, my, sz * 0.7, 0, Math.PI * 2);
-  ctx.strokeStyle = "#53a8b6";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-sz, cy); ctx.lineTo(cx+sz, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy-sz); ctx.lineTo(cx, cy+sz); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, sz*0.7, 0, Math.PI*2);
+  ctx.lineWidth = 1.5; ctx.stroke();
 
-  // aim 模式额外提示
+  // aim 模式提示圈
   if (mode === "aim") {
-    ctx.strokeStyle = "rgba(83,168,182,0.5)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(83,168,182,0.5)"; ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.arc(mx, my, TARGET_RADIUS + 2, 0, Math.PI*2); ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(mx, my, TARGET_RADIUS_PX+2, 0, Math.PI*2);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // AI 模式：显示引导圈
+  if (mode === "ai" && window._aiNearZone) {
+    const nz = window._aiNearZone * W;  // 归一化 [0,1] → 像素
+    ctx.strokeStyle = "rgba(0,255,200,0.25)"; ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.arc(cx, cy, nz, 0, Math.PI*2);
+    ctx.stroke(); ctx.setLineDash([]);
   }
 }
 
-// ── 点击处理 ──
+// ══════════════════════════════════════════════════════
+//  人类模式：点击
+// ══════════════════════════════════════════════════════
+
 function handleClick(e) {
-  if (!gameActive) return;
+  if (!gameActive || mode === "ai") return;
   const rect = canvas.getBoundingClientRect();
   const sx = e.clientX - rect.left;
   const sy = e.clientY - rect.top;
   clicks++;
-
   let didHit = false;
   targets.forEach(t => {
     if (!t.alive) return;
-    const dist = Math.hypot(t.x - sx, t.y - sy);
-    if (dist < TARGET_RADIUS) {
-      t.alive = false;
-      hits++;
-      combo++;
-      didHit = true;
-      // 刷新一个新的目标
+    if (dist({x:sx, y:sy}, t) < TARGET_RADIUS_PX) {
+      t.alive = false; hits++; combo++; didHit = true;
       targets.push(spawnTarget());
-      // 显示命中效果
       showHitMsg(t.x, t.y);
     }
   });
-
-  if (!didHit) {
-    combo = 0;
-  }
+  if (!didHit) combo = 0;
   updateHUD();
 }
 
-// ── 移动处理（仅 aim 模式下靠近即命中 + 更新准星位置） ──
 function handleMove(e) {
   const rect = canvas.getBoundingClientRect();
   mx = e.clientX - rect.left;
   my = e.clientY - rect.top;
-  if (!gameActive) return;
-
-  if (mode === "aim") {
-    clicks++;
-    targets.forEach(t => {
-      if (!t.alive) return;
-      const dist = Math.hypot(t.x - mx, t.y - my);
-      if (dist < TARGET_RADIUS) {
-        t.alive = false;
-        hits++;
-        combo++;
-        targets.push(spawnTarget());
-        showHitMsg(t.x, t.y);
-      }
-    });
-    updateHUD();
-  }
+  if (!gameActive || mode !== "aim") return;
+  clicks++;
+  let didHit = false;
+  targets.forEach(t => {
+    if (!t.alive) return;
+    if (dist({x:mx, y:my}, t) < TARGET_RADIUS_PX) {
+      t.alive = false; hits++; combo++; didHit = true;
+      targets.push(spawnTarget());
+      showHitMsg(t.x, t.y);
+    }
+  });
+  if (!didHit) combo = 0;
+  updateHUD();
 }
 
 function showHitMsg(x, y) {
@@ -279,22 +286,40 @@ function showHitMsg(x, y) {
   setTimeout(() => { msg.style.opacity = "0"; }, 300);
 }
 
-// ── HUD 更新 ──
+// ══════════════════════════════════════════════════════
+//  HUD 更新
+// ══════════════════════════════════════════════════════
+
 function updateHUD() {
-  document.getElementById("hits").textContent = hits;
-  document.getElementById("timer").textContent = timeLeft;
-  document.getElementById("combo").textContent = combo;
-  const acc = clicks > 0 ? (hits / clicks * 100).toFixed(1) : "0.0";
-  document.getElementById("accuracy").textContent = acc;
+  if (mode === "ai") {
+    document.getElementById("hits").textContent = hits;
+    document.getElementById("timer").textContent = aiSteps + "/" + aiMaxSteps;
+    document.getElementById("accuracy").textContent = aiTotalReward.toFixed(1);
+    document.getElementById("combo").textContent = "-";
+
+    // 更新 HUD 标签
+    document.querySelector("#hud-hits").innerHTML = "🎯 命中 <span id='hits'>" + hits + "</span>";
+    document.querySelector("#hud-time").innerHTML = "⏳ 步数 <span id='timer'>" + aiSteps + "/" + aiMaxSteps + "</span>";
+    document.querySelector("#hud-acc").innerHTML = "⭐ 奖励 <span id='accuracy'>" + aiTotalReward.toFixed(1) + "</span>";
+    document.querySelector("#hud-combo").innerHTML = "🤖 AI 模式 <span id='combo'>运行中</span>";
+  } else {
+    document.getElementById("hits").textContent = hits;
+    document.getElementById("timer").textContent = timeLeft;
+    document.getElementById("combo").textContent = combo;
+    const acc = clicks > 0 ? (hits / clicks * 100).toFixed(1) : "0.0";
+    document.getElementById("accuracy").textContent = acc;
+
+    document.querySelector("#hud-hits").innerHTML = "🎯 命中 <span id='hits'>" + hits + "</span>";
+    document.querySelector("#hud-time").innerHTML = "⏱️ 时间 <span id='timer'>" + timeLeft + "s</span>";
+    document.querySelector("#hud-acc").innerHTML = "📊 命中率 <span id='accuracy'>" + acc + "%</span>";
+    document.querySelector("#hud-combo").innerHTML = "🔥 连击 <span id='combo'>" + combo + "</span>";
+  }
 }
 
-// ── 游戏循环 ──
-function gameLoop() {
-  draw();
-  requestAnimationFrame(gameLoop);
-}
+// ══════════════════════════════════════════════════════
+//  人类模式：计时器 + 游戏循环
+// ══════════════════════════════════════════════════════
 
-// ── 计时器 ──
 function startTimer() {
   clearInterval(timerId);
   timerId = setInterval(() => {
@@ -303,34 +328,169 @@ function startTimer() {
     if (timeLeft <= 0) {
       clearInterval(timerId);
       gameActive = false;
-      alert(`游戏结束！\n命中: ${hits} | 点击: ${clicks} | 连击: ${combo}\n命中率: ${(hits/clicks*100).toFixed(1)}%`);
+      alert("游戏结束！\n命中: " + hits + " | 点击: " + clicks + "\n命中率: " + (hits/clicks*100).toFixed(1) + "%");
     }
   }, 1000);
 }
 
-// ── 全局控制 ──
 function startGame() {
+  if (mode === "ai") {
+    stopAI();
+    return;
+  }
   resetGame();
   gameActive = true;
   startTimer();
 }
 
 function toggleMode() {
+  if (mode === "ai") return;
   mode = mode === "click" ? "aim" : "click";
-  const btns = document.querySelectorAll("button");
-  btns[1].textContent = mode === "click" ? "📐 模式切换 (瞄准命中)" : "📐 模式切换 (点击射击)";
+  document.getElementById("btn-mode").textContent =
+    mode === "click" ? "📐 模式切换 (瞄准命中)" : "📐 模式切换 (点击射击)";
 }
 
-// ── 事件绑定 ──
+// ══════════════════════════════════════════════════════
+//  AI 模式
+// ══════════════════════════════════════════════════════
+
+async function toggleAI() {
+  if (!HAS_EEL) {
+    alert("AI 模式需要通过 ai_play.py 启动：\n\nuv run python experiments/rl/aimtrainer/src/ai_play.py");
+    return;
+  }
+
+  if (mode === "ai") {
+    stopAI();
+    return;
+  }
+
+  // 切换到 AI 模式
+  clearInterval(timerId);
+  gameActive = false;
+  mode = "ai";
+  aiActive = true;
+  aiSteps = 0;
+  aiTotalReward = 0;
+  hits = 0;
+
+  document.getElementById("btn-ai").textContent = "⏹ 停止 AI";
+  document.getElementById("btn-ai").classList.add("active");
+  document.getElementById("btn-mode").disabled = true;
+  document.querySelector("button[onclick='startGame()']").disabled = true;
+
+  updateHUD();
+
+  // 获取模型信息
+  try {
+    const info = await eel.ai_get_artifacts_info()();
+    aiMaxSteps = info.max_steps || 500;
+    const status = info.model_exists
+      ? "模型已加载，开始推理..."
+      : "模型不存在，使用随机动作";
+    document.getElementById("status-bar").textContent = status;
+  } catch (e) {
+    document.getElementById("status-bar").textContent = "连接 Python 后端中...";
+  }
+
+  // 通知 Python 开始 episode
+  eel.ai_start_episode(0.04, aiMaxSteps);
+}
+
+function stopAI() {
+  if (!HAS_EEL) return;
+  eel.ai_stop_episode();
+
+  mode = "click";
+  aiActive = false;
+  gameActive = false;
+
+  document.getElementById("btn-ai").textContent = "🤖 AI 演示";
+  document.getElementById("btn-ai").classList.remove("active");
+  document.getElementById("btn-mode").disabled = false;
+  document.querySelector("button[onclick='startGame()']").disabled = false;
+  document.getElementById("status-bar").textContent = "AI 已停止";
+
+  resetGame();
+  updateHUD();
+}
+
+// ── eel 回调：接收 Python 推送的渲染状态 ──
+
+eel.expose(render_state, "render_state");
+function render_state(state) {
+  if (!aiActive) return;
+
+  // 更新准星（归一化 [0,1] → 像素）
+  mx = state.crosshair_x * W;
+  my = state.crosshair_y * H;
+
+  // 更新目标列表
+  targets = (state.targets || []).map((t, i) => ({
+    x: t.x * W,
+    y: t.y * H,
+    alive: t.alive,
+    _locked: i === state.locked_idx && t.alive,
+  }));
+
+  aiSteps = state.step || 0;
+  aiMaxSteps = state.max_steps || 500;
+  aiTotalReward = state.total_reward || 0;
+  hits = state.hits || 0;
+
+  // 缓存引导圈大小供绘制使用
+  window._aiNearZone = state.near_zone || 0.12;
+
+  updateHUD();
+}
+
+// ── eel 回调：episode 结束 ──
+
+eel.expose(ai_episode_done, "ai_episode_done");
+function ai_episode_done() {
+  if (!aiActive) return;
+  stopAI();
+  document.getElementById("status-bar").textContent =
+    "Episode 结束 — 命中: " + hits + " | 总奖励: " + aiTotalReward.toFixed(1);
+}
+
+// ══════════════════════════════════════════════════════
+//  事件绑定
+// ══════════════════════════════════════════════════════
+
 canvas.addEventListener("click", handleClick);
 canvas.addEventListener("mousemove", handleMove);
-canvas.addEventListener("mouseleave", () => { mx = -999; my = -999; });
+canvas.addEventListener("mouseleave", () => { mx = my = -999; });
 
-// ── 启动 ──
+// ── 初始化 ──
+function gameLoop() {
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
 resetGame();
 updateHUD();
+
+if (HAS_EEL) {
+  // 通过 eel 启动时不自动开始游戏
+  gameActive = false;
+  clearInterval(timerId);
+  document.getElementById("status-bar").textContent =
+    "点击「AI 演示」开始 AI 推理，或点击「开始游戏」人类对战";
+  // 检查模型状态
+  eel.ai_get_artifacts_info()(info => {
+    if (!info.model_exists) {
+      document.getElementById("status-bar").textContent =
+        "⚠ 模型文件不存在，请先训练模型（src/train.py），或 AI 将使用随机动作";
+    }
+  });
+} else {
+  // 纯浏览器模式：自动开始
+  gameLoop();
+  startGame();
+}
+
 gameLoop();
-startGame();
 </script>
 </body>
 </html>
