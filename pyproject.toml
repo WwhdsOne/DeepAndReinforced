@@ -34,6 +34,7 @@ build-backend = "hatchling.build"
 packages = [
     "experiments/pic-classify/src/pic_classify",
     "experiments/neural_network/src/neural_network",
+    "experiments/rl/cliff-walking/src/cliff_walking",
 ]
 
 [tool.pytest.ini_options]
@@ -46,3 +47,5 @@ mnist-train = "neural_network.mnist:train_main"
 mnist-predict = "neural_network.mnist:predict_main"
 mnist-evaluate = "neural_network.mnist:evaluate_main"
 mnist-visualize = "neural_network.visualize:visualize_main"
+cliff-walking-play = "cliff_walking.env:main"
+cliff-walking-train = "cliff_walking.train:main"
