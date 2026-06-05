@@ -1,4 +1,5 @@
 """TwoLayerNet: 基于误差反向传播的手写数字识别。"""
+
 import sys
 import os
 
@@ -14,10 +15,12 @@ from common.gradient import numerical_gradient
 
 class TwoLayerNet:
     def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
-        self.params = {"W1": weight_init_std * np.random.randn(input_size, hidden_size),
-                       "b1": np.zeros(hidden_size),
-                       "W2": weight_init_std * np.random.randn(hidden_size, output_size),
-                       "b2": np.zeros(output_size)}
+        self.params = {
+            "W1": weight_init_std * np.random.randn(input_size, hidden_size),
+            "b1": np.zeros(hidden_size),
+            "W2": weight_init_std * np.random.randn(hidden_size, output_size),
+            "b2": np.zeros(output_size),
+        }
 
         self.layers = OrderedDict()
         self.layers["Affine1"] = Affine(self.params["W1"], self.params["b1"])
@@ -60,11 +63,14 @@ class TwoLayerNet:
         for layer in layers:
             dout = layer.backward(dout)
 
-        grads = {"W1": self.layers["Affine1"].dW,
-                 "b1": self.layers["Affine1"].db,
-                 "W2": self.layers["Affine2"].dW,
-                 "b2": self.layers["Affine2"].db}
+        grads = {
+            "W1": self.layers["Affine1"].dW,
+            "b1": self.layers["Affine1"].db,
+            "W2": self.layers["Affine2"].dW,
+            "b2": self.layers["Affine2"].db,
+        }
         return grads
+
 
 def trainAndTest():
     # 超参数

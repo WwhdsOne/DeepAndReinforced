@@ -68,7 +68,7 @@ class CliffWalkingEnv:
         row, col = self._agent_pos
 
         # 计算目标位置（边界外则保持不动）
-        if action == 0:    # 上
+        if action == 0:  # 上
             next_row = max(row - 1, 0)
             next_col = col
         elif action == 1:  # 右

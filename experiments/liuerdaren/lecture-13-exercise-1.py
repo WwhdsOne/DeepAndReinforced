@@ -32,10 +32,7 @@ def collate_fn(batch):
 
 class SentimentDataset(Dataset):
     def __init__(self, csv_file):
-        self.df = pd.read_csv(
-            csv_file,
-            sep='\t'
-        )
+        self.df = pd.read_csv(csv_file, sep="\t")
 
         counter = Counter()
         for idx, sentence in enumerate(self.df["Phrase"]):
@@ -60,10 +57,7 @@ class SentimentDataset(Dataset):
         words = text.lower().split()
 
         # 转 id
-        ids = [
-            self.vocab.get(word, self.vocab["<unk>"])
-            for word in words
-        ]
+        ids = [self.vocab.get(word, self.vocab["<unk>"]) for word in words]
 
         ids = torch.tensor(ids, dtype=torch.long)
         label = torch.tensor(label, dtype=torch.long)  # 显式转为 Tensor
@@ -81,7 +75,7 @@ class SentimentModel(nn.Module):
             num_layers=2,
             batch_first=True,
             bidirectional=True,
-            dropout=0.5
+            dropout=0.5,
         )
         self.fc = nn.Linear(hidden_dim * 2, num_classes)
 
@@ -94,10 +88,12 @@ class SentimentModel(nn.Module):
 
 if __name__ == "__main__":
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    train_dataset = SentimentDataset('data/sentiment-analysis-on-movie-reviews/train.tsv')
+    train_dataset = SentimentDataset(
+        "data/sentiment-analysis-on-movie-reviews/train.tsv"
+    )
 
     # 假设你已经有了完整的训练数据集对象 train_dataset（包含所有训练样本）
     total_len = len(train_dataset)
@@ -108,11 +104,15 @@ if __name__ == "__main__":
     train_subset, val_subset = random_split(
         train_dataset,
         [train_len, val_len],
-        generator=torch.Generator().manual_seed(42)  # 固定随机种子，保证可复现
+        generator=torch.Generator().manual_seed(42),  # 固定随机种子，保证可复现
     )
 
-    train_loader = DataLoader(train_subset, batch_size=512, shuffle=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_subset, batch_size=512, shuffle=False, collate_fn=collate_fn)
+    train_loader = DataLoader(
+        train_subset, batch_size=512, shuffle=True, collate_fn=collate_fn
+    )
+    val_loader = DataLoader(
+        val_subset, batch_size=512, shuffle=False, collate_fn=collate_fn
+    )
 
     vocab_size = len(train_dataset.vocab) + 1
     embedding_dim = 64
@@ -124,7 +124,9 @@ if __name__ == "__main__":
     print("验证集大小：", val_len)
     print("字典大小：", vocab_size)
 
-    model = SentimentModel(vocab_size, embedding_dim, hidden_dim, num_classes).to(device)
+    model = SentimentModel(vocab_size, embedding_dim, hidden_dim, num_classes).to(
+        device
+    )
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -135,7 +137,9 @@ if __name__ == "__main__":
         # ----- 训练阶段 -----
         model.train()
         total_loss = 0
-        loop = tqdm(train_loader, desc=f"Epoch {i + 1}/{epoch_time} [Train]", leave=False)
+        loop = tqdm(
+            train_loader, desc=f"Epoch {i + 1}/{epoch_time} [Train]", leave=False
+        )
         for sentence, label in loop:
             sentence, label = sentence.to(device), label.to(device)  # 加这行
             optimizer.zero_grad()
@@ -153,7 +157,9 @@ if __name__ == "__main__":
         correct = 0
         total = 0
         with torch.no_grad():
-            val_loop = tqdm(val_loader, desc=f"Epoch {i + 1}/{epoch_time} [Val]", leave=False)
+            val_loop = tqdm(
+                val_loader, desc=f"Epoch {i + 1}/{epoch_time} [Val]", leave=False
+            )
             for sentence, label in val_loop:
                 sentence = sentence.to(device)
                 label = label.to(device)

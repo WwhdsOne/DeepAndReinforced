@@ -14,11 +14,7 @@ from torch.nn.utils.rnn import pad_sequence
 def collate_fn(batch):
     names, labels = zip(*batch)
 
-    names = pad_sequence(
-        names,
-        batch_first=True,
-        padding_value=0
-    )
+    names = pad_sequence(names, batch_first=True, padding_value=0)
 
     # CrossEntropyLoss 要求 label 为 LongTensor
     labels = torch.tensor(labels, dtype=torch.long)
@@ -45,10 +41,7 @@ class NameDataset(Dataset):
         if char2idx is None:
             unique_chars = sorted(set("".join(self.names)))
 
-            self.char2idx = {
-                char: i + 1
-                for i, char in enumerate(unique_chars)
-            }
+            self.char2idx = {char: i + 1 for i, char in enumerate(unique_chars)}
         else:
             self.char2idx = char2idx
 
@@ -57,16 +50,12 @@ class NameDataset(Dataset):
             unique_countries = sorted(set(countries))
 
             self.country2idx = {
-                country: i
-                for i, country in enumerate(unique_countries)
+                country: i for i, country in enumerate(unique_countries)
             }
         else:
             self.country2idx = country2idx
 
-        self.countries = [
-            self.country2idx[c]
-            for c in countries
-        ]
+        self.countries = [self.country2idx[c] for c in countries]
 
     def __len__(self):
         return len(self.names)
@@ -74,54 +63,39 @@ class NameDataset(Dataset):
     def __getitem__(self, idx):
         name = self.names[idx]
 
-        name_ids = [
-            self.char2idx[c]
-            for c in name
-        ]
+        name_ids = [self.char2idx[c] for c in name]
 
         return torch.tensor(name_ids), self.countries[idx]
 
 
 class RNNClassifier(nn.Module):
-    def __init__(
-            self,
-            vocab_size,
-            embedding_dim,
-            hidden_size,
-            output_size
-    ):
+    def __init__(self, vocab_size, embedding_dim, hidden_size, output_size):
         super().__init__()
 
-        self.embedding = nn.Embedding(
-            vocab_size,
-            embedding_dim,
-            padding_idx=0
-        )
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
 
         self.gru = nn.GRU(
             embedding_dim,
             hidden_size,
             batch_first=True,
             bidirectional=True,
-            num_layers=2
+            num_layers=2,
         )
 
         self.dropout = nn.Dropout(0.5)
 
-        self.fc = nn.Linear(hidden_size * 2, output_size)   # 因为双向，所以要 *2
+        self.fc = nn.Linear(hidden_size * 2, output_size)  # 因为双向，所以要 *2
 
     def forward(self, x):
         x = self.embedding(x)
-        out, hidden = self.gru(x)          # out: (batch, seq_len, hidden_size*2)
-        last_out = out[:, -1, :]           # (batch, hidden_size*2)
+        out, hidden = self.gru(x)  # out: (batch, seq_len, hidden_size*2)
+        last_out = out[:, -1, :]  # (batch, hidden_size*2)
         last_out = self.dropout(last_out)
         return self.fc(last_out)
 
 
 if __name__ == "__main__":
-    train_dataset = NameDataset(
-        "data/names_train.csv"
-    )
+    train_dataset = NameDataset("data/names_train.csv")
 
     # ============================
     # 修改2：
@@ -134,9 +108,7 @@ if __name__ == "__main__":
     # 和训练阶段可能不一致
     # ============================
     test_dataset = NameDataset(
-        "data/names_test.csv",
-        train_dataset.char2idx,
-        train_dataset.country2idx
+        "data/names_test.csv", train_dataset.char2idx, train_dataset.country2idx
     )
 
     # ============================
@@ -155,24 +127,18 @@ if __name__ == "__main__":
     # DataLoader
     # ============================
     train_loader = DataLoader(
-        train_dataset,
-        batch_size=64,
-        shuffle=True,
-        collate_fn=collate_fn
+        train_dataset, batch_size=64, shuffle=True, collate_fn=collate_fn
     )
 
     test_loader = DataLoader(
-        test_dataset,
-        batch_size=64,
-        shuffle=False,
-        collate_fn=collate_fn
+        test_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn
     )
 
     model = RNNClassifier(
         vocab_size=vocab_size,
         embedding_dim=embedding_dim,
         hidden_size=hidden_size,
-        output_size=output_size
+        output_size=output_size,
     )
 
     criterion = nn.CrossEntropyLoss()
@@ -181,10 +147,7 @@ if __name__ == "__main__":
     # 新增：
     # Adam 优化器
     # ============================
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=1e-3
-    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     epochs = 10
 
@@ -233,8 +196,4 @@ if __name__ == "__main__":
 
         acc = correct / total
 
-        print(
-            f"Epoch [{epoch + 1}/{epochs}] "
-            f"Loss={avg_loss:.4f} "
-            f"Acc={acc:.4f}"
-        )
+        print(f"Epoch [{epoch + 1}/{epochs}] " f"Loss={avg_loss:.4f} " f"Acc={acc:.4f}")

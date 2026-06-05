@@ -41,7 +41,7 @@ def numerical_gradient(func, x: np.ndarray):
     h = 1e-4
     grad = np.zeros_like(x)
 
-    it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
+    it = np.nditer(x, flags=["multi_index"], op_flags=["readwrite"])
     while not it.finished:
         idx = it.multi_index
         tmp_val = x[idx]
@@ -75,7 +75,7 @@ def f(W):
     return net.loss(x, t)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     net = simpleNet()
     x = np.array([0.6, 0.9])
     t = np.array([0, 0, 1])

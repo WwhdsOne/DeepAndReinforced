@@ -1,4 +1,5 @@
 """SimpleConvNet: 基于 PyTorch 的卷积神经网络（对应 Ch7 的 NumPy 实现）。"""
+
 import os
 
 import torch
@@ -14,8 +15,16 @@ class TorchSimpleConvNet(nn.Module):
     Conv1 → ReLU → Pool1 → Affine1 → ReLU2 → Affine2 → Softmax
     """
 
-    def __init__(self, input_dim=(1, 28, 28), filter_num=30, filter_size=5,
-                 hidden_size=50, output_size=10, stride=1, pad=0):
+    def __init__(
+        self,
+        input_dim=(1, 28, 28),
+        filter_num=30,
+        filter_size=5,
+        hidden_size=50,
+        output_size=10,
+        stride=1,
+        pad=0,
+    ):
         super().__init__()
 
         # 计算卷积输出尺寸
@@ -36,7 +45,7 @@ class TorchSimpleConvNet(nn.Module):
             out_channels=filter_num,
             kernel_size=filter_size,
             stride=stride,
-            padding=pad
+            padding=pad,
         )
 
         # 全连接层
@@ -46,7 +55,9 @@ class TorchSimpleConvNet(nn.Module):
         # 初始化权重（与 NumPy 版保持一致）
         self._init_weights(filter_num, filter_size, input_dim, hidden_size, output_size)
 
-    def _init_weights(self, filter_num, filter_size, input_dim, hidden_size, output_size):
+    def _init_weights(
+        self, filter_num, filter_size, input_dim, hidden_size, output_size
+    ):
         """初始化权重（对应 NumPy 版的初始化方式）。"""
         # 卷积层权重：Xavier 初始化
         nn.init.xavier_normal_(self.conv1.weight)
@@ -111,8 +122,12 @@ def train_and_test(
 
     # 加载 MNIST 数据
     transform = transforms.Compose([transforms.ToTensor()])
-    train_dataset = datasets.MNIST(root=data_dir, train=True, download=True, transform=transform)
-    test_dataset = datasets.MNIST(root=data_dir, train=False, download=True, transform=transform)
+    train_dataset = datasets.MNIST(
+        root=data_dir, train=True, download=True, transform=transform
+    )
+    test_dataset = datasets.MNIST(
+        root=data_dir, train=False, download=True, transform=transform
+    )
 
     # 准备数据（与 NumPy 版保持一致）
     x_train = train_dataset.data.float().view(-1, 1, 28, 28) / 255.0
@@ -133,7 +148,7 @@ def train_and_test(
         filter_num=filter_num,
         filter_size=filter_size,
         hidden_size=hidden_size,
-        output_size=output_size
+        output_size=output_size,
     ).to(device)
 
     # Adam 优化器
@@ -147,7 +162,9 @@ def train_and_test(
     test_acc_list = []
 
     # 学习率调度：每个 epoch 衰减为原来的 0.9
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=iter_per_epoch, gamma=0.9)
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, step_size=iter_per_epoch, gamma=0.9
+    )
 
     # 训练循环
     network.train()
@@ -175,8 +192,12 @@ def train_and_test(
             network.eval()
             with torch.no_grad():
                 # 分批计算准确率（避免内存爆炸）
-                train_acc = _batch_accuracy(network, x_train.to(device), t_train_onehot.to(device), batch_size)
-                test_acc = _batch_accuracy(network, x_test.to(device), t_test_onehot.to(device), batch_size)
+                train_acc = _batch_accuracy(
+                    network, x_train.to(device), t_train_onehot.to(device), batch_size
+                )
+                test_acc = _batch_accuracy(
+                    network, x_test.to(device), t_test_onehot.to(device), batch_size
+                )
             train_acc_list.append(train_acc)
             test_acc_list.append(test_acc)
 
@@ -189,8 +210,12 @@ def train_and_test(
             network.train()
 
     # 最终评估
-    final_train_acc = _batch_accuracy(network, x_train.to(device), t_train_onehot.to(device), batch_size)
-    final_test_acc = _batch_accuracy(network, x_test.to(device), t_test_onehot.to(device), batch_size)
+    final_train_acc = _batch_accuracy(
+        network, x_train.to(device), t_train_onehot.to(device), batch_size
+    )
+    final_test_acc = _batch_accuracy(
+        network, x_test.to(device), t_test_onehot.to(device), batch_size
+    )
     print(f"\n最终训练准确率: {final_train_acc:.4f}")
     print(f"最终测试准确率: {final_test_acc:.4f}")
 
@@ -202,8 +227,8 @@ def _batch_accuracy(network, x, t, batch_size=2000):
     """分批计算准确率（避免内存爆炸）。"""
     total_correct = 0
     for i in range(0, x.size(0), batch_size):
-        x_batch = x[i:i + batch_size]
-        t_batch = t[i:i + batch_size]
+        x_batch = x[i : i + batch_size]
+        t_batch = t[i : i + batch_size]
         logits = network(x_batch)
         preds = torch.argmax(logits, dim=1)
         labels = torch.argmax(t_batch, dim=1) if t_batch.ndim > 1 else t_batch

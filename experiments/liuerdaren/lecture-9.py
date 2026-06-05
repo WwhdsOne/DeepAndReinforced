@@ -59,14 +59,20 @@ def train(model, train_loader, criterion, optimizer, epoch):
         correct += predicted.eq(target).sum().item()
 
         if batch_idx % 100 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                       100. * batch_idx / len(train_loader), loss.item()))
-            print('Train Accuracy: {:.2f}%'.format(100. * correct / total))
-            print('-' * 10)
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    epoch,
+                    batch_idx * len(data),
+                    len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
+                )
+            )
+            print("Train Accuracy: {:.2f}%".format(100.0 * correct / total))
+            print("-" * 10)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     batch_size = 128
     train_loader, test_loader = get_mnist_loaders(batch_size=batch_size, normalize=True)
     print(f"训练集大小：{len(train_loader.dataset)}")

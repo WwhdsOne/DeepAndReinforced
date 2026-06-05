@@ -3,8 +3,15 @@ import torch.nn as nn
 
 
 class Model(nn.Module):
-    def __init__(self, input_size, hidden_size,
-                 embedding_size, batch_size, num_class, num_layers=1):
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        embedding_size,
+        batch_size,
+        num_class,
+        num_layers=1,
+    ):
         super().__init__()
         self.batch_size = batch_size
         self.input_size = input_size
@@ -13,10 +20,12 @@ class Model(nn.Module):
         self.embedding_size = embedding_size
         self.num_class = num_class
         self.emb = nn.Embedding(input_size, embedding_size)
-        self.gru = nn.GRU(input_size=self.embedding_size,
-                           hidden_size=self.hidden_size,
-                           num_layers=num_layers,
-                           batch_first=True)
+        self.gru = nn.GRU(
+            input_size=self.embedding_size,
+            hidden_size=self.hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+        )
         self.fc = nn.Linear(hidden_size, num_class)
 
     def forward(self, x):
@@ -27,16 +36,20 @@ class Model(nn.Module):
 
     def print_embeddings(self):
         """打印embedding层的向量"""
-        print("\n" + "="*50)
-        print("Embedding层向量 ({}个词, 每个{}维):".format(self.emb.num_embeddings, self.emb.embedding_dim))
-        print("="*50)
+        print("\n" + "=" * 50)
+        print(
+            "Embedding层向量 ({}个词, 每个{}维):".format(
+                self.emb.num_embeddings, self.emb.embedding_dim
+            )
+        )
+        print("=" * 50)
         for idx in range(self.emb.num_embeddings):
             vector = self.emb.weight[idx].detach().numpy()
             print(f"词 '{idx2char[idx]}' (ID:{idx}) 的向量: {vector}")
-        print("="*50 + "\n")
+        print("=" * 50 + "\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     num_class = 4
     input_size = 4
     hidden_size = 8
@@ -45,7 +58,7 @@ if __name__ == '__main__':
     batch_size = 1
     seq_len = 5
 
-    idx2char = ['e', 'h', 'l', 'o']
+    idx2char = ["e", "h", "l", "o"]
     x_data = [[1, 0, 2, 2, 3]]
     y_data = [3, 1, 2, 3, 2]
 
@@ -53,12 +66,14 @@ if __name__ == '__main__':
     labels = torch.LongTensor(y_data)
 
     # 创建模型
-    net = Model(input_size=input_size,
-                hidden_size=hidden_size,
-                embedding_size=embedding_size,
-                batch_size=batch_size,
-                num_class=num_class,
-                num_layers=num_layers)
+    net = Model(
+        input_size=input_size,
+        hidden_size=hidden_size,
+        embedding_size=embedding_size,
+        batch_size=batch_size,
+        num_class=num_class,
+        num_layers=num_layers,
+    )
 
     # 打印初始化后的embedding向量（随机初始化）
     print("\n【训练前的Embedding向量】")
@@ -78,8 +93,8 @@ if __name__ == '__main__':
 
         # 每隔几个epoch打印一次预测结果
         predictions = outputs.max(1)[1]
-        print('Predict = ', ''.join([idx2char[idx] for idx in predictions]))
-        print('Epoch [%d/%d] Loss: %.4f' % (epoch + 1, epoch_times, loss.item()))
+        print("Predict = ", "".join([idx2char[idx] for idx in predictions]))
+        print("Epoch [%d/%d] Loss: %.4f" % (epoch + 1, epoch_times, loss.item()))
 
         # 每5个epoch打印一次embedding向量变化
         if (epoch + 1) % 5 == 0:

@@ -1,6 +1,7 @@
 import numpy as np
 
-from common.utils import im2col,col2im
+from common.utils import im2col, col2im
+
 
 class Pooling:
     def __init__(self, pool_h, pool_w, stride=2, pad=0):
@@ -43,7 +44,6 @@ class Pooling:
 
         # 3. 还原形状 + col2im（🔥 修正这里）
         dcol = dcol.reshape(-1, C * pool_size)  # 可能需要调整
-        dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w,
-                    self.stride, self.pad)
+        dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w, self.stride, self.pad)
 
         return dx

@@ -38,7 +38,9 @@ def make_env(render_mode=None, target_radius=0.04):
 
 
 def train(total_timesteps=200_000, eval_freq=10_000, target_radius=0.04):
-    print(f"训练配置：total_timesteps={total_timesteps}, eval_freq={eval_freq}, target_radius={target_radius}")
+    print(
+        f"训练配置：total_timesteps={total_timesteps}, eval_freq={eval_freq}, target_radius={target_radius}"
+    )
     print(f"日志目录：{LOG_DIR}")
 
     # ── 训练环境 + VecNormalize ──────────────────────────
@@ -106,7 +108,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--steps", type=int, default=200_000, help="总训练步数")
     parser.add_argument("--eval-freq", type=int, default=10_000, help="评估频率")
-    parser.add_argument("--target-radius", type=float, default=0.04, help="目标命中半径")
+    parser.add_argument(
+        "--target-radius", type=float, default=0.04, help="目标命中半径"
+    )
     args = parser.parse_args()
 
     train(

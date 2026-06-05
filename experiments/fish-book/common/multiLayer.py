@@ -1,13 +1,14 @@
-
 class MultiLayer:
     def __init__(self):
         self.x = None
         self.y = None
-    def forward(self,x,y):
+
+    def forward(self, x, y):
         self.x = x
         self.y = y
         out = x * y
         return out
+
     def backward(self, dout):
         """
         乘法层的反向传播。
@@ -27,7 +28,8 @@ class MultiLayer:
         # 将计算好的梯度返回，供上一层（前一层）的节点继续反向传播
         return dx, dy
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     apple_origin_price = 100
     apple_tax = 1.1
     apple_num = 2
@@ -36,7 +38,7 @@ if __name__ == '__main__':
     b = MultiLayer()
     A = a.forward(apple_origin_price, apple_tax)
     B = b.forward(apple_num, A)
-    print("Price = ",B)
+    print("Price = ", B)
 
     print()
 
@@ -44,11 +46,9 @@ if __name__ == '__main__':
     dapple_price, dapple_num = b.backward(dprice)
     # 继续反向传播，计算损失对原价和税率的梯度
     dapple, dtax = a.backward(dapple_num)
-    
+
     # 打印各个梯度值，用于验证反向传播的正确性
     print("dapple_price = ", dapple_price)  # 损失对含税价格的梯度
-    print("dapple_num = ", dapple_num)      # 损失对数量的梯度
-    print("dapple = ", dapple)              # 损失对原价的梯度
-    print("dtax = ", dtax)                  # 损失对税率的梯度
-
-
+    print("dapple_num = ", dapple_num)  # 损失对数量的梯度
+    print("dapple = ", dapple)  # 损失对原价的梯度
+    print("dtax = ", dtax)  # 损失对税率的梯度

@@ -11,38 +11,50 @@ import time
 class SimpleConvNet:
     """一个简单的卷积神经网络。"""
 
-    def __init__(self, input_dim=(1, 28, 28),
-                 conv_param=None,
-                 hidden_size=100, output_size=10):
+    def __init__(
+        self, input_dim=(1, 28, 28), conv_param=None, hidden_size=100, output_size=10
+    ):
         if conv_param is None:
-            conv_param = {'filter_num': 30, 'filter_size': 5,
-                          'pad': 0, 'stride': 1}
-        filter_num = conv_param['filter_num']
-        filter_size = conv_param['filter_size']
-        filter_pad = conv_param['pad']
-        filter_stride = conv_param['stride']
+            conv_param = {"filter_num": 30, "filter_size": 5, "pad": 0, "stride": 1}
+        filter_num = conv_param["filter_num"]
+        filter_size = conv_param["filter_size"]
+        filter_pad = conv_param["pad"]
+        filter_stride = conv_param["stride"]
         input_size = input_dim[1]
-        conv_output_size = (input_size - filter_size + 2 * filter_pad) / filter_stride + 1
-        pool_output_size = int(filter_num * (conv_output_size / 2) * (conv_output_size / 2))
+        conv_output_size = (
+            input_size - filter_size + 2 * filter_pad
+        ) / filter_stride + 1
+        pool_output_size = int(
+            filter_num * (conv_output_size / 2) * (conv_output_size / 2)
+        )
 
         self.params = {}
-        self.params['W1'] = (np.random.randn(filter_num, input_dim[0], filter_size, filter_size)
-                             * np.sqrt(1.0 / (input_size * filter_size * filter_size)))
-        self.params['b1'] = np.zeros(filter_num)
-        self.params['W2'] = np.random.randn(pool_output_size, hidden_size) * np.sqrt(1.0 / pool_output_size)
-        self.params['b2'] = np.zeros(hidden_size)
-        self.params['W3'] = np.random.randn(hidden_size, output_size) * np.sqrt(1.0 / hidden_size)
-        self.params['b3'] = np.zeros(output_size)
+        self.params["W1"] = np.random.randn(
+            filter_num, input_dim[0], filter_size, filter_size
+        ) * np.sqrt(1.0 / (input_size * filter_size * filter_size))
+        self.params["b1"] = np.zeros(filter_num)
+        self.params["W2"] = np.random.randn(pool_output_size, hidden_size) * np.sqrt(
+            1.0 / pool_output_size
+        )
+        self.params["b2"] = np.zeros(hidden_size)
+        self.params["W3"] = np.random.randn(hidden_size, output_size) * np.sqrt(
+            1.0 / hidden_size
+        )
+        self.params["b3"] = np.zeros(output_size)
 
         self.layers = OrderedDict()
-        self.layers['Conv1'] = Convolution(self.params['W1'], self.params['b1'],
-                                           conv_param['stride'], conv_param['pad'])
-        self.layers['Relu1'] = Relu()
-        self.layers['Pool1'] = Pooling(pool_h=2, pool_w=2, stride=2)
-        self.layers['Affine1'] = Affine(self.params['W2'], self.params['b2'])
+        self.layers["Conv1"] = Convolution(
+            self.params["W1"],
+            self.params["b1"],
+            conv_param["stride"],
+            conv_param["pad"],
+        )
+        self.layers["Relu1"] = Relu()
+        self.layers["Pool1"] = Pooling(pool_h=2, pool_w=2, stride=2)
+        self.layers["Affine1"] = Affine(self.params["W2"], self.params["b2"])
 
-        self.layers['Relu2'] = Relu()
-        self.layers['Affine2'] = Affine(self.params['W3'], self.params['b3'])
+        self.layers["Relu2"] = Relu()
+        self.layers["Affine2"] = Affine(self.params["W3"], self.params["b3"])
 
         self.lastLayer = SoftmaxWithLoss()
 
@@ -59,9 +71,9 @@ class SimpleConvNet:
         for layer in layers:
             dout = layer.backward(dout)
         grads = {}
-        grads['W1'], grads['b1'] = self.layers['Conv1'].dW, self.layers['Conv1'].db
-        grads['W2'], grads['b2'] = self.layers['Affine1'].dW, self.layers['Affine1'].db
-        grads['W3'], grads['b3'] = self.layers['Affine2'].dW, self.layers['Affine2'].db
+        grads["W1"], grads["b1"] = self.layers["Conv1"].dW, self.layers["Conv1"].db
+        grads["W2"], grads["b2"] = self.layers["Affine1"].dW, self.layers["Affine1"].db
+        grads["W3"], grads["b3"] = self.layers["Affine2"].dW, self.layers["Affine2"].db
 
         return grads, loss
 
@@ -83,8 +95,8 @@ class SimpleConvNet:
         """分批计算准确率，避免全量数据一次性前向传播导致内存爆炸。"""
         total_correct = 0
         for i in range(0, x.shape[0], batch_size):
-            x_batch = x[i:i + batch_size]
-            t_batch = t[i:i + batch_size]
+            x_batch = x[i : i + batch_size]
+            t_batch = t[i : i + batch_size]
             y = self.predict(x_batch)
             y = np.argmax(y, axis=1)
             if t_batch.ndim != 1:
@@ -112,9 +124,9 @@ def trainAndTest():
     x_test = x_test.astype(np.float32).reshape(-1, 1, 28, 28) / 255.0
 
     # 构建网络
-    network = SimpleConvNet(input_dim=input_dim,
-                            hidden_size=hidden_size,
-                            output_size=output_size)
+    network = SimpleConvNet(
+        input_dim=input_dim, hidden_size=hidden_size, output_size=output_size
+    )
 
     train_loss_list = []
     train_acc_list = []
@@ -127,7 +139,9 @@ def trainAndTest():
     for i in range(iters_num):
         # 在循环中添加进度提示
         elapsed = time.time() - start_time
-        print(f"Iteration {i}/{iters_num} ({(i / iters_num) * 100:.1f}%) - {elapsed:.1f}s elapsed")
+        print(
+            f"Iteration {i}/{iters_num} ({(i / iters_num) * 100:.1f}%) - {elapsed:.1f}s elapsed"
+        )
         batch_mask = np.random.choice(train_size, batch_size)
         x_batch = x_train[batch_mask]
         t_batch = t_train[batch_mask]

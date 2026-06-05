@@ -19,6 +19,9 @@ uv run cliff-walking-play
 # 训练（默认 500 轮）
 uv run cliff-walking-train --episodes 500
 
+# DQN 训练（神经网络逼近 Q 函数）
+uv run cliff-walking-dqn --episodes 500
+
 # 运行测试
 uv run --group dev pytest experiments/rl/cliff-walking/tests/ -v
 ```

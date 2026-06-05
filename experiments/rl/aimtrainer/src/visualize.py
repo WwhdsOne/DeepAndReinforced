@@ -19,7 +19,6 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.callbacks import BaseCallback
 
-
 # ── 路径配置 ────────────────────────────────────────────
 ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "artifacts"
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -75,7 +74,11 @@ def plot_curves(log_dir=None):
         return
 
     # 取 'time/total_timesteps' 作为 x 轴
-    x_axis = df["time/total_timesteps"] if "time/total_timesteps" in df.columns else range(len(df))
+    x_axis = (
+        df["time/total_timesteps"]
+        if "time/total_timesteps" in df.columns
+        else range(len(df))
+    )
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
@@ -160,7 +163,11 @@ def play_episode(delay=0.02):
         step = 0
         while not done:
             # 将 render_env 的观测传给 VecNormalize 做标准化
-            obs_vec = env.get_original_obs() if hasattr(env, "get_original_obs") else env.reset()
+            obs_vec = (
+                env.get_original_obs()
+                if hasattr(env, "get_original_obs")
+                else env.reset()
+            )
             # 简单做法：用 VecNormalize._normalize_observation()
             # 更简单做法：用原始观测直接用模型预测，因为我们保存的是原始环境的模型
             action, _ = model.predict(obs_render, deterministic=True)
@@ -226,7 +233,9 @@ if __name__ == "__main__":
 
     # 推理回放
     sub_play = sub.add_parser("play", help="加载模型进行推理回放")
-    sub_play.add_argument("--speed", type=float, default=0.02, help="帧间隔秒数 (越小越快)")
+    sub_play.add_argument(
+        "--speed", type=float, default=0.02, help="帧间隔秒数 (越小越快)"
+    )
 
     # 随机代理
     sub_rand = sub.add_parser("random", help="随机代理演示")

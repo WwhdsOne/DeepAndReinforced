@@ -1,15 +1,47 @@
-"""悬崖漫步训练入口 —— 在此实现你的强化学习算法。
-
-提供骨架结构：环境创建、训练循环、评估、命令行参数。
-"""
-
+import torch.nn as nn
+import torch
 import argparse
-import numpy as np
-
+import torch.optim as optim
+import random
 from env import CliffWalkingEnv
 
+class QNetwork(nn.Module):
+    def __init__(self, env):
+        super().__init__()
+        n_states = env.n_states  # 48
+        n_actions = env.n_actions  # 4
+        
+        self.network = nn.Sequential(
+            nn.Linear(n_states, 128),  # 输入：48 维 one-hot 状态
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, n_actions)  # 输出：4 个动作的 Q 值
+        )
+    
+    def forward(self, x):
+        return self.network(x)
 
-def train(env: CliffWalkingEnv, episodes: int = 500) -> np.ndarray:
+class ReplayBuffer:
+    def __init__(self, capacity=10000):
+        self.capacity = capacity
+        self.buffer = []
+        self.position = 0
+
+    def push(self, state, action, reward, next_state, done):
+        if len(self.buffer) < self.capacity:
+            self.buffer.append(None)
+        self.buffer[self.position] = (state, action, reward, next_state, done)
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        return zip(*random.sample(self.buffer, batch_size))
+
+    def __len__(self):
+        return len(self.buffer)
+
+
+def train(env: CliffWalkingEnv, episodes: int = 500) -> torch.Tensor:
     """训练主函数 —— 在此实现你的算法。
 
     Parameters
@@ -21,21 +53,26 @@ def train(env: CliffWalkingEnv, episodes: int = 500) -> np.ndarray:
 
     Returns
     -------
-    Q : np.ndarray
+    Q : torch.Tensor
         训练后的 Q 表，形状 (48, 4)。
     """
+    replay_buffer = ReplayBuffer()
+    q_network = QNetwork(env)
+    optimizer = optim.Adam(q_network.parameters(), lr=1e-3)
+    target_network = QNetwork(env)
+    target_network.load_state_dict(q_network.state_dict()) # 同步目标网络（完全复制）
     n_states = env.n_states
     n_actions = env.n_actions
 
-    Q = np.zeros((n_states, n_actions))
+    Q = torch.zeros((n_states, n_actions))
 
-    for ep in range(episodes):
+    for _ in range(episodes):
         state = env.reset()
         done = False
 
         while not done:
-            if np.random.random() < 0.1:
-                action = np.random.randint(0, n_actions)
+            if torch.rand(1).item() < 0.1:
+                action = torch.randint(0, n_actions, (1,)).item()
             else:
                 action = Q[state].argmax()
 
@@ -50,13 +87,13 @@ def train(env: CliffWalkingEnv, episodes: int = 500) -> np.ndarray:
     return Q
 
 
-def evaluate(env: CliffWalkingEnv, Q: np.ndarray, episodes: int = 10) -> float:
+def evaluate(env: CliffWalkingEnv, Q: torch.Tensor, episodes: int = 10) -> float:
     """评估训练后的策略。
 
     Parameters
     ----------
     env : CliffWalkingEnv
-    Q : np.ndarray
+    Q : torch.Tensor
         Q 表，形状 (48, 4)。
     episodes : int
         评估轮数。
@@ -77,7 +114,7 @@ def evaluate(env: CliffWalkingEnv, Q: np.ndarray, episodes: int = 10) -> float:
     return total / episodes
 
 
-def render_policy(env: CliffWalkingEnv, Q: np.ndarray) -> None:
+def render_policy(env: CliffWalkingEnv, Q: torch.Tensor) -> None:
     """在终端渲染学到的策略轨迹。"""
     action_names = {0: "↑", 1: "→", 2: "↓", 3: "←"}
     state = env.reset()
@@ -85,7 +122,7 @@ def render_policy(env: CliffWalkingEnv, Q: np.ndarray) -> None:
     done = False
     steps = 0
     while not done and steps < 100:
-        action = Q[state].argmax()
+        action = Q[state].argmax().item()
         print(f"动作: {action_names[action]}")
         state, reward, done = env.step(action)
         env.render()

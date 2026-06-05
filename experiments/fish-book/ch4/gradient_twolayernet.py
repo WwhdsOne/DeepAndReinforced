@@ -46,7 +46,7 @@ def compute_numerical_gradient(func, params: np.ndarray):
     h = 1e-4
     gradients = np.zeros_like(params)
 
-    it = np.nditer(params, flags=['multi_index'], op_flags=['readwrite'])
+    it = np.nditer(params, flags=["multi_index"], op_flags=["readwrite"])
     while not it.finished:
         idx = it.multi_index
         original_value = params[idx]
@@ -65,16 +65,16 @@ def compute_numerical_gradient(func, params: np.ndarray):
 class TwoLayerNet:
     def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
         self.params = {
-            'W1': weight_init_std * np.random.randn(input_size, hidden_size),
-            'b1': np.zeros(hidden_size),
-            'W2': weight_init_std * np.random.randn(hidden_size, output_size),
-            'b2': np.zeros(output_size),
+            "W1": weight_init_std * np.random.randn(input_size, hidden_size),
+            "b1": np.zeros(hidden_size),
+            "W2": weight_init_std * np.random.randn(hidden_size, output_size),
+            "b2": np.zeros(output_size),
         }
 
     def predict(self, x):
-        a1 = np.dot(x, self.params['W1']) + self.params['b1']
+        a1 = np.dot(x, self.params["W1"]) + self.params["b1"]
         z1 = sigmoid(a1)
-        a2 = np.dot(z1, self.params['W2']) + self.params['b2']
+        a2 = np.dot(z1, self.params["W2"]) + self.params["b2"]
         predictions = softmax(a2)
         return predictions
 
@@ -93,19 +93,19 @@ class TwoLayerNet:
     def compute_gradients(self, x, t):
         loss_for_current_batch = lambda _: self.loss(x, t)
         gradients = {
-            'W1': compute_numerical_gradient(loss_for_current_batch, self.params['W1']),
-            'b1': compute_numerical_gradient(loss_for_current_batch, self.params['b1']),
-            'W2': compute_numerical_gradient(loss_for_current_batch, self.params['W2']),
-            'b2': compute_numerical_gradient(loss_for_current_batch, self.params['b2'])
+            "W1": compute_numerical_gradient(loss_for_current_batch, self.params["W1"]),
+            "b1": compute_numerical_gradient(loss_for_current_batch, self.params["b1"]),
+            "W2": compute_numerical_gradient(loss_for_current_batch, self.params["W2"]),
+            "b2": compute_numerical_gradient(loss_for_current_batch, self.params["b2"]),
         }
         return gradients
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     net = TwoLayerNet(input_size=2, hidden_size=3, output_size=2)
     x = np.random.rand(5, 2)
     t = np.random.rand(5, 2)
-    gradients = net.compute_gradients(x, t) # 计算梯度
+    gradients = net.compute_gradients(x, t)  # 计算梯度
     for name, gradient in gradients.items():
         print(f"{name} =")
         print(gradient)

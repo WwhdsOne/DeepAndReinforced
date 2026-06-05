@@ -17,9 +17,7 @@ class GoogleNet(nn.Module):
         self.incep2 = InceptionA(in_channels=20)
 
         self.mp = nn.MaxPool2d(2)
-        self.fc = nn.Linear(3168,10)
-
-
+        self.fc = nn.Linear(3168, 10)
 
     def forward(self, x):
         in_size = x.size(0)
@@ -31,6 +29,7 @@ class GoogleNet(nn.Module):
         x = x.view(in_size, -1)
         x = self.fc(x)
         return x
+
 
 class InceptionA(nn.Module):
     def __init__(self, in_channels):
@@ -60,12 +59,13 @@ class InceptionA(nn.Module):
         branch_pool = self.branch_pool(branch_pool)
 
         outputs = [
-           branch1x1,
-           branch5x5,
-           branch3x3,
-           branch_pool,
+            branch1x1,
+            branch5x5,
+            branch3x3,
+            branch_pool,
         ]
         return torch.cat(outputs, dim=1)
+
 
 class ResidualBlock(nn.Module):
     def __init__(self, channels):
@@ -77,6 +77,7 @@ class ResidualBlock(nn.Module):
         y = F.relu(self.conv1(x))
         y = self.conv2(y)
         return F.relu(x + y)
+
 
 class ResNet(nn.Module):
     def __init__(self):
@@ -90,7 +91,8 @@ class ResNet(nn.Module):
         self.rblock2 = ResidualBlock(32)
 
         self.fc = nn.Linear(512, 10)
-    def forward(self,x):
+
+    def forward(self, x):
         in_size = x.size(0)
         x = self.mp(F.relu(self.conv1(x)))
         x = self.rblock1(x)
@@ -134,14 +136,20 @@ def train(model, train_loader, criterion, optimizer, epoch):
         correct += predicted.eq(target).sum().item()
 
         if batch_idx % 100 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                       100. * batch_idx / len(train_loader), loss.item()))
-            print('Train Accuracy: {:.2f}%'.format(100. * correct / total))
-            print('-' * 10)
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    epoch,
+                    batch_idx * len(data),
+                    len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
+                )
+            )
+            print("Train Accuracy: {:.2f}%".format(100.0 * correct / total))
+            print("-" * 10)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     batch_size = 128
     train_loader, test_loader = get_mnist_loaders(batch_size=batch_size, normalize=True)
     print(f"训练集大小：{len(train_loader.dataset)}")

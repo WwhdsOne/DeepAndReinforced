@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 
+
 class LogisticRegressionModel(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -10,9 +11,10 @@ class LogisticRegressionModel(torch.nn.Module):
         outputs = torch.sigmoid(self.linear(x))
         return outputs
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     model = LogisticRegressionModel()
-    criterion = torch.nn.BCELoss(reduction='mean')
+    criterion = torch.nn.BCELoss(reduction="mean")
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
     # 生成有逻辑关系的数据
@@ -30,7 +32,9 @@ if __name__ == '__main__':
             # 计算准确率
             y_pred_class = (y_pred > 0.5).float()
             accuracy = (y_pred_class == y_data).float().mean()
-            print(f"epoch = {epoch}, loss = {loss.item():.4f}, accuracy = {accuracy:.4f}")
+            print(
+                f"epoch = {epoch}, loss = {loss.item():.4f}, accuracy = {accuracy:.4f}"
+            )
 
         optimizer.zero_grad()
         loss.backward()
@@ -46,21 +50,42 @@ if __name__ == '__main__':
     mask_0 = (y_data == 0).squeeze()
     mask_1 = (y_data == 1).squeeze()
 
-    plt.scatter(x_data[mask_0].numpy(), y_data[mask_0].numpy(),
-                c='blue', label='Class 0', alpha=0.6, s=30)
-    plt.scatter(x_data[mask_1].numpy(), y_data[mask_1].numpy(),
-                c='red', label='Class 1', alpha=0.6, s=30)
+    plt.scatter(
+        x_data[mask_0].numpy(),
+        y_data[mask_0].numpy(),
+        c="blue",
+        label="Class 0",
+        alpha=0.6,
+        s=30,
+    )
+    plt.scatter(
+        x_data[mask_1].numpy(),
+        y_data[mask_1].numpy(),
+        c="red",
+        label="Class 1",
+        alpha=0.6,
+        s=30,
+    )
 
     # 画预测概率曲线
-    plt.plot(x_sorted.numpy(), y_prob_sorted.detach().numpy(),
-             'g-', label='Predicted probability', linewidth=3)
+    plt.plot(
+        x_sorted.numpy(),
+        y_prob_sorted.detach().numpy(),
+        "g-",
+        label="Predicted probability",
+        linewidth=3,
+    )
 
     # 画决策边界 (概率=0.5)
-    plt.axhline(y=0.5, color='gray', linestyle='--', alpha=0.5, label='Decision boundary (0.5)')
+    plt.axhline(
+        y=0.5, color="gray", linestyle="--", alpha=0.5, label="Decision boundary (0.5)"
+    )
 
-    plt.xlabel('x')
-    plt.ylabel('Probability / Class')
+    plt.xlabel("x")
+    plt.ylabel("Probability / Class")
     plt.legend()
-    plt.title(f'Logistic Regression: w={model.linear.weight.item():.3f}, b={model.linear.bias.item():.3f}')
+    plt.title(
+        f"Logistic Regression: w={model.linear.weight.item():.3f}, b={model.linear.bias.item():.3f}"
+    )
     plt.grid(True, alpha=0.3)
     plt.show()

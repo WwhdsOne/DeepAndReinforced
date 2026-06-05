@@ -5,6 +5,7 @@ description = "Machine learning experiments managed with uv."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "black>=26.5.1",
     "eel>=0.18.2",
     "gymnasium>=1.0.0",
     "kagglehub>=1.0.1",
@@ -25,6 +26,10 @@ dependencies = [
 dev = [
     "pytest>=8.4.0",
 ]
+
+[tool.black]
+target-version = ["py313"]
+line-length = 88
 
 [build-system]
 requires = ["hatchling"]
@@ -49,3 +54,4 @@ mnist-evaluate = "neural_network.mnist:evaluate_main"
 mnist-visualize = "neural_network.visualize:visualize_main"
 cliff-walking-play = "cliff_walking.env:main"
 cliff-walking-train = "cliff_walking.train:main"
+cliff-walking-dqn = "cliff_walking.dqn_train:main"

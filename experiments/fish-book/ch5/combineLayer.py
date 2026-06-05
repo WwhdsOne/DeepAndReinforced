@@ -1,7 +1,7 @@
 from common.multiLayer import MultiLayer
 from common.addLayer import AddLayer
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     apple_origin_price = 100
     apple_tax = 1.1
     apple_num = 2
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     D = d.forward(orange_num, C)
     E = e.forward(B, D)
 
-    print("Price = ",E)
+    print("Price = ", E)
 
     print()
 
@@ -31,9 +31,9 @@ if __name__ == '__main__':
 
     # 打印各个梯度值，用于验证反向传播的正确性
     print("dapple_price = ", dapple_price)  # 损失对含税价格的梯度
-    print("dapple_num = ", dapple_num)      # 损失对数量的梯度
-    print("dapple = ", dapple)              # 损失对原价的梯度
-    print("dtax = ", dtax)                  # 损失对税率的梯度
+    print("dapple_num = ", dapple_num)  # 损失对数量的梯度
+    print("dapple = ", dapple)  # 损失对原价的梯度
+    print("dtax = ", dtax)  # 损失对税率的梯度
 
     # 从输出层（总价）开始反向传播，计算损失对数量和含税价格的梯度
     dorange_price, dorange_num = d.backward(dprice)

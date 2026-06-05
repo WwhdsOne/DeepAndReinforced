@@ -46,6 +46,7 @@ _vec_normalize = None  # VecNormalize 包装器（用于观测归一化）
 #  eel 暴露给 JS 的函数
 # ══════════════════════════════════════════════════════════
 
+
 @eel.expose
 def ai_start_episode(target_radius: float = 0.04, max_steps: int = 500) -> None:
     """JS 调用：开始一个 AI 推理 episode。"""
@@ -141,6 +142,7 @@ def ai_get_artifacts_info() -> dict:
 #  内部辅助
 # ══════════════════════════════════════════════════════════
 
+
 def _push_state(hits: int, total_reward: float) -> None:
     """将当前环境状态推送到浏览器渲染。"""
     if _env is None:
@@ -148,11 +150,13 @@ def _push_state(hits: int, total_reward: float) -> None:
 
     targets_json = []
     for i in range(_env.n_targets):
-        targets_json.append({
-            "x": float(_env.targets[i][0]),
-            "y": float(_env.targets[i][1]),
-            "alive": bool(_env.target_alive[i]),
-        })
+        targets_json.append(
+            {
+                "x": float(_env.targets[i][0]),
+                "y": float(_env.targets[i][1]),
+                "alive": bool(_env.target_alive[i]),
+            }
+        )
 
     # 锁定目标信息
     locked_idx = int(_env._locked_target_idx)
@@ -162,28 +166,31 @@ def _push_state(hits: int, total_reward: float) -> None:
     )
     locked_dist = -1.0
     if locked_idx >= 0 and _env.target_alive[locked_idx]:
-        locked_dist = float(np.sqrt(np.sum(
-            (_env.crosshair - _env.targets[locked_idx]) ** 2
-        )))
+        locked_dist = float(
+            np.sqrt(np.sum((_env.crosshair - _env.targets[locked_idx]) ** 2))
+        )
 
-    eel.render_state({
-        "crosshair_x": float(_env.crosshair[0]),
-        "crosshair_y": float(_env.crosshair[1]),
-        "targets": targets_json,
-        "step": int(_env.current_step),
-        "max_steps": int(_env.max_steps),
-        "hits": hits,
-        "total_reward": round(total_reward, 3),
-        "locked_idx": locked_idx,
-        "locked_dist": round(locked_dist, 4),
-        "target_radius": float(_env.target_radius),
-        "near_zone": float(near_zone),
-    })
+    eel.render_state(
+        {
+            "crosshair_x": float(_env.crosshair[0]),
+            "crosshair_y": float(_env.crosshair[1]),
+            "targets": targets_json,
+            "step": int(_env.current_step),
+            "max_steps": int(_env.max_steps),
+            "hits": hits,
+            "total_reward": round(total_reward, 3),
+            "locked_idx": locked_idx,
+            "locked_dist": round(locked_dist, 4),
+            "target_radius": float(_env.target_radius),
+            "near_zone": float(near_zone),
+        }
+    )
 
 
 # ══════════════════════════════════════════════════════════
 #  入口
 # ══════════════════════════════════════════════════════════
+
 
 def main():
     global _model

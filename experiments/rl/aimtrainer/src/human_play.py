@@ -40,8 +40,11 @@ def play():
     font_big = pygame.font.SysFont("segoeui,Arial,PingFangSC", 28)
 
     # 初始化环境
-    env = AimTrainerEnv(max_steps=MAX_STEPS, n_targets=N_TARGETS,
-                        target_radius=TARGET_RADIUS / WINDOW_SIZE)
+    env = AimTrainerEnv(
+        max_steps=MAX_STEPS,
+        n_targets=N_TARGETS,
+        target_radius=TARGET_RADIUS / WINDOW_SIZE,
+    )
     obs, _ = env.reset()
 
     running = True
@@ -72,8 +75,9 @@ def play():
                 for i in range(env.n_targets):
                     if not env.target_alive[i]:
                         continue
-                    dist = np.sqrt((nx - env.targets[i][0])**2 +
-                                   (ny - env.targets[i][1])**2)
+                    dist = np.sqrt(
+                        (nx - env.targets[i][0]) ** 2 + (ny - env.targets[i][1]) ** 2
+                    )
                     if dist < env.target_radius:
                         # 命中！
                         env.total_hits += 1
@@ -110,25 +114,23 @@ def play():
             r = TARGET_RADIUS
 
             for glow in range(r + 10, r - 2, -2):
-                c = (255, max(0, 120 - glow*8), max(0, 120 - glow*8))
+                c = (255, max(0, 120 - glow * 8), max(0, 120 - glow * 8))
                 pygame.draw.circle(screen, c, (tx, ty), max(1, glow))
             pygame.draw.circle(screen, TARGET, (tx, ty), r, 2)
-            pygame.draw.circle(screen, TARGET, (tx, ty), max(1, r//2), 1)
+            pygame.draw.circle(screen, TARGET, (tx, ty), max(1, r // 2), 1)
 
         # 命中闪光
         if current_step - last_hit_frame < 10:
             flash = pygame.Surface((WINDOW_SIZE, WINDOW_SIZE))
-            flash.set_alpha(max(0, 80 - (current_step - last_hit_frame)*8))
+            flash.set_alpha(max(0, 80 - (current_step - last_hit_frame) * 8))
             flash.fill(HIT_FLASH)
             screen.blit(flash, (0, 0))
 
         # 鼠标准星
         mx_px, my_px = pygame.mouse.get_pos()
         sz = 14
-        pygame.draw.line(screen, CURSOR, (mx_px - sz, my_px),
-                         (mx_px + sz, my_px), 2)
-        pygame.draw.line(screen, CURSOR, (mx_px, my_px - sz),
-                         (mx_px, my_px + sz), 2)
+        pygame.draw.line(screen, CURSOR, (mx_px - sz, my_px), (mx_px + sz, my_px), 2)
+        pygame.draw.line(screen, CURSOR, (mx_px, my_px - sz), (mx_px, my_px + sz), 2)
         pygame.draw.circle(screen, CURSOR, (mx_px, my_px), TARGET_RADIUS, 1)
 
         # HUD
@@ -139,7 +141,7 @@ def play():
 
         if pause:
             pause_text = font_big.render("PAUSED (P to resume)", True, TEXT)
-            screen.blit(pause_text, (WINDOW_SIZE//2 - 150, WINDOW_SIZE//2 - 20))
+            screen.blit(pause_text, (WINDOW_SIZE // 2 - 150, WINDOW_SIZE // 2 - 20))
 
         # 指令提示
         hint = font.render("Click | Space=Reset | P=Pause", True, (100, 100, 100))

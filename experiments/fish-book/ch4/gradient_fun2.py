@@ -23,6 +23,7 @@ def numerical_gradient(func, x: np.ndarray):
 
     return grad
 
+
 def gradient_descent(f, init_x, lr=0.01, step_num=100):
     x = init_x
     for i in range(step_num):
@@ -31,11 +32,11 @@ def gradient_descent(f, init_x, lr=0.01, step_num=100):
     return x
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     x = np.arange(-2.0, 2.1, 0.2)
     y = np.arange(-2.0, 2.1, 0.2)
     X, Y = np.meshgrid(x, y)
-    Z = X ** 2 + Y ** 2
+    Z = X**2 + Y**2
 
     grad_x = np.zeros_like(X)
     grad_y = np.zeros_like(Y)
@@ -52,16 +53,16 @@ if __name__ == '__main__':
         Y,
         -grad_x,
         -grad_y,
-        angles='xy',
-        scale_units='xy',
+        angles="xy",
+        scale_units="xy",
         scale=20,
-        color='gray',
+        color="gray",
         width=0.0035,
     )
     plt.xlim(-2.0, 2.0)
     plt.ylim(-2.0, 2.0)
-    plt.xlabel(r'$x_0$')
-    plt.ylabel(r'$x_1$')
-    plt.title(r'$f(x_0, x_1) = x_0^2 + x_1^2$ 的梯度')
-    plt.gca().set_aspect('equal', adjustable='box')
+    plt.xlabel(r"$x_0$")
+    plt.ylabel(r"$x_1$")
+    plt.title(r"$f(x_0, x_1) = x_0^2 + x_1^2$ 的梯度")
+    plt.gca().set_aspect("equal", adjustable="box")
     plt.show()

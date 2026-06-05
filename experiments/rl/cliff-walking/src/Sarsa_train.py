@@ -46,7 +46,7 @@ def train(env: CliffWalkingEnv, episodes: int = 500) -> np.ndarray:
                     next_action = np.random.randint(0, n_actions)
                 else:
                     next_action = Q[next_state].argmax()
-                td_target = reward + 0.9 * Q[next_state,next_action]
+                td_target = reward + 0.9 * Q[next_state, next_action]
             else:
                 td_target = reward
 

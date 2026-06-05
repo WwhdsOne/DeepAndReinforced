@@ -10,10 +10,16 @@ def identity_function(x):
 
 
 def init_network():
-    network = {'W1': np.array([[0.1, 0.3, 0.5], [0.2, 0.4, 0.6]]), 'b1': np.array([0.1, 0.2, 0.3]),
-               'W2': np.array([[0.1, 0.4], [0.2, 0.5], [0.3, 0.6]]), 'b2': np.array([0.1, 0.2]),
-               'W3': np.array([[0.1, 0.3], [0.2, 0.4]]), 'b3': np.array([0.1, 0.2])}
+    network = {
+        "W1": np.array([[0.1, 0.3, 0.5], [0.2, 0.4, 0.6]]),
+        "b1": np.array([0.1, 0.2, 0.3]),
+        "W2": np.array([[0.1, 0.4], [0.2, 0.5], [0.3, 0.6]]),
+        "b2": np.array([0.1, 0.2]),
+        "W3": np.array([[0.1, 0.3], [0.2, 0.4]]),
+        "b3": np.array([0.1, 0.2]),
+    }
     return network
+
 
 def softmax(a):
     exp_a = np.exp(a)
@@ -21,15 +27,15 @@ def softmax(a):
     y = exp_a / sum_exp_a
     return y
 
-def better_softmax(a,C):
+
+def better_softmax(a, C):
     exp_a = np.exp(a + np.log(C))
     sum_exp_a = np.sum(exp_a + np.log(C))
 
 
-
 def forward(network, x):
-    W1, W2, W3 = network['W1'], network['W2'], network['W3']
-    b1, b2, b3 = network['b1'], network['b2'], network['b3']
+    W1, W2, W3 = network["W1"], network["W2"], network["W3"]
+    b1, b2, b3 = network["b1"], network["b2"], network["b3"]
 
     print("网络参数初始化完成")
     print("W1 =", W1)
@@ -63,7 +69,7 @@ def forward(network, x):
     return y
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     network = init_network()
     x = np.array([1.0, 0.5])
     y = forward(network, x)

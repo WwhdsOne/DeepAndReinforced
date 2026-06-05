@@ -1,4 +1,5 @@
 """TwoLayerNet: 基于误差反向传播的手写数字识别优化版。"""
+
 import os
 import sys
 
@@ -13,23 +14,28 @@ from common.layers import Affine, Relu, SoftmaxWithLoss, BatchNorm, Adam, Dropou
 
 class MultiLayerNet:
     def __init__(self, input_size, hidden_size, output_size):
-        self.params = {"W1": kaiming(input_size, hidden_size),  # Kaiming 初始化
-                       "b1": np.zeros(hidden_size),
-                       "gamma1": np.ones(hidden_size),  # BatchNorm 缩放参数
-                       "beta1": np.zeros(hidden_size),  # BatchNorm 平移参数
-                       "W2": xavier(hidden_size, output_size),  # Xavier 随机初始化
-                       "b2": np.zeros(output_size),
-                       "gamma2": np.ones(output_size),
-                       "beta2": np.zeros(output_size),
-                       }
+        self.params = {
+            "W1": kaiming(input_size, hidden_size),  # Kaiming 初始化
+            "b1": np.zeros(hidden_size),
+            "gamma1": np.ones(hidden_size),  # BatchNorm 缩放参数
+            "beta1": np.zeros(hidden_size),  # BatchNorm 平移参数
+            "W2": xavier(hidden_size, output_size),  # Xavier 随机初始化
+            "b2": np.zeros(output_size),
+            "gamma2": np.ones(output_size),
+            "beta2": np.zeros(output_size),
+        }
 
         self.layers = OrderedDict()
         self.layers["Affine1"] = Affine(self.params["W1"], self.params["b1"])
-        self.layers["BatchNorm1"] = BatchNorm(self.params["gamma1"], self.params["beta1"])
+        self.layers["BatchNorm1"] = BatchNorm(
+            self.params["gamma1"], self.params["beta1"]
+        )
         self.layers["Dropout1"] = Dropout(0.1)
         self.layers["Relu1"] = Relu()
         self.layers["Affine2"] = Affine(self.params["W2"], self.params["b2"])
-        self.layers["BatchNorm2"] = BatchNorm(self.params["gamma2"], self.params["beta2"])
+        self.layers["BatchNorm2"] = BatchNorm(
+            self.params["gamma2"], self.params["beta2"]
+        )
         self.lastLayer = SoftmaxWithLoss()
 
     def predict(self, x, train_flg=False):
@@ -48,7 +54,9 @@ class MultiLayerNet:
         ce_loss = self.lastLayer.forward(y, t)
 
         # L2 正则化：只对权重 W1、W2 施加惩罚
-        l2_loss = lambda_reg * (np.sum(self.params["W1"] ** 2) + np.sum(self.params["W2"] ** 2))
+        l2_loss = lambda_reg * (
+            np.sum(self.params["W1"] ** 2) + np.sum(self.params["W2"] ** 2)
+        )
         return ce_loss + l2_loss
 
     def accuracy(self, x, t):
@@ -69,15 +77,16 @@ class MultiLayerNet:
         for layer in layers:
             dout = layer.backward(dout)
 
-        grads = {"W1": self.layers["Affine1"].dW,
-                 "b1": self.layers["Affine1"].db,
-                 "gamma1": self.layers["BatchNorm1"].dgamma,
-                 "beta1": self.layers["BatchNorm1"].dbeta,
-                 "W2": self.layers["Affine2"].dW,
-                 "b2": self.layers["Affine2"].db,
-                 "gamma2": self.layers["BatchNorm2"].dgamma,
-                 "beta2": self.layers["BatchNorm2"].dbeta
-                 }
+        grads = {
+            "W1": self.layers["Affine1"].dW,
+            "b1": self.layers["Affine1"].db,
+            "gamma1": self.layers["BatchNorm1"].dgamma,
+            "beta1": self.layers["BatchNorm1"].dbeta,
+            "W2": self.layers["Affine2"].dW,
+            "b2": self.layers["Affine2"].db,
+            "gamma2": self.layers["BatchNorm2"].dgamma,
+            "beta2": self.layers["BatchNorm2"].dbeta,
+        }
         return grads
 
 
@@ -86,7 +95,9 @@ def kaiming(input_size, hidden_size):
 
 
 def xavier(input_size, hidden_size):
-    return np.random.randn(input_size, hidden_size) * np.sqrt(2 / (input_size + hidden_size))
+    return np.random.randn(input_size, hidden_size) * np.sqrt(
+        2 / (input_size + hidden_size)
+    )
 
 
 def trainAndTest():

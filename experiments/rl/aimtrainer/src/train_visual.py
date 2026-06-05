@@ -43,7 +43,9 @@ def build_reward_param_lines(info):
     ]
 
 
-def render_frame(screen, env, step_count, total_hits, max_steps, total_reward, reward_info, font):
+def render_frame(
+    screen, env, step_count, total_hits, max_steps, total_reward, reward_info, font
+):
     """在 Pygame 窗口中渲染 AimTrainerEnv 的当前状态"""
     screen.fill(BG_COLOR)
 
@@ -74,8 +76,7 @@ def render_frame(screen, env, step_count, total_hits, max_steps, total_reward, r
     pygame.draw.line(screen, CROSS_COLOR, (cx - sz, cy), (cx + sz, cy), 2)
     pygame.draw.line(screen, CROSS_COLOR, (cx, cy - sz), (cx, cy + sz), 2)
     pygame.draw.circle(
-        screen, CROSS_COLOR, (cx, cy),
-        int(env.target_radius * WINDOW_SIZE), 1
+        screen, CROSS_COLOR, (cx, cy), int(env.target_radius * WINDOW_SIZE), 1
     )
 
     # HUD
@@ -96,7 +97,9 @@ def render_frame(screen, env, step_count, total_hits, max_steps, total_reward, r
     pygame.display.flip()
 
 
-def render_episode_with_model(model, raw_env, vec_normalize, screen, font, max_steps=500):
+def render_episode_with_model(
+    model, raw_env, vec_normalize, screen, font, max_steps=500
+):
     """用当前模型跑一个 episode 并在 Pygame 窗口中渲染。返回总命中数
 
     vec_normalize: 训练时用的 VecNormalize 包装，用于归一化观测
@@ -122,8 +125,16 @@ def render_episode_with_model(model, raw_env, vec_normalize, screen, font, max_s
         done = term or trunc
         step += 1
 
-        render_frame(screen, raw_env, step, info["total_hits"],
-                     raw_env.max_steps, total_reward, info, font)
+        render_frame(
+            screen,
+            raw_env,
+            step,
+            info["total_hits"],
+            raw_env.max_steps,
+            total_reward,
+            info,
+            font,
+        )
         clock.tick(RENDER_FPS)
 
     raw_env.close()
@@ -148,7 +159,14 @@ def make_env(render_mode=None, target_radius=0.06):
 
 # ── 回调：定期暂停训练、渲染评估 agent ──
 class LiveRenderCallback(BaseCallback):
-    def __init__(self, vec_normalize, target_radius, render_freq=10_000, max_render_steps=None, verbose=0):
+    def __init__(
+        self,
+        vec_normalize,
+        target_radius,
+        render_freq=10_000,
+        max_render_steps=None,
+        verbose=0,
+    ):
         super().__init__(verbose)
         self.vec_normalize = vec_normalize  # 用于归一化观测
         self.target_radius = target_radius
@@ -166,12 +184,22 @@ class LiveRenderCallback(BaseCallback):
 
         # 用裸环境渲染，但将 VecNormalize 传给推理使用
         raw_env = make_env(target_radius=self.target_radius)
-        render_steps = self.max_render_steps if self.max_render_steps is not None else raw_env.max_steps
-        hits, total_reward = render_episode_with_model(
-            self.model, raw_env, self.vec_normalize, self.screen, self.font,
-            max_steps=render_steps
+        render_steps = (
+            self.max_render_steps
+            if self.max_render_steps is not None
+            else raw_env.max_steps
         )
-        print(f"  🎮 [Demo @ {self.num_timesteps:,} steps] Agent 命中 {hits} 次, 累计 reward: {total_reward:.1f}")
+        hits, total_reward = render_episode_with_model(
+            self.model,
+            raw_env,
+            self.vec_normalize,
+            self.screen,
+            self.font,
+            max_steps=render_steps,
+        )
+        print(
+            f"  🎮 [Demo @ {self.num_timesteps:,} steps] Agent 命中 {hits} 次, 累计 reward: {total_reward:.1f}"
+        )
 
     def _on_step(self) -> bool:
         if self.render_freq > 0 and self.num_timesteps % self.render_freq == 0:
@@ -190,12 +218,21 @@ def train(total_timesteps=200_000, render_freq=10_000, target_radius=0.06):
     print(f"   target_radius={target_radius}\n")
 
     train_env = DummyVecEnv([lambda: make_env(target_radius=target_radius)])
-    train_env = VecNormalize(train_env, norm_obs=True, norm_reward=True,
-                             clip_obs=10.0, clip_reward=10.0)
+    train_env = VecNormalize(
+        train_env, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0
+    )
 
-    model = PPO("MlpPolicy", train_env, verbose=1,
-                n_steps=2048, batch_size=64, n_epochs=10,
-                learning_rate=3e-4, ent_coef=0.01, device="auto")
+    model = PPO(
+        "MlpPolicy",
+        train_env,
+        verbose=1,
+        n_steps=2048,
+        batch_size=64,
+        n_epochs=10,
+        learning_rate=3e-4,
+        ent_coef=0.01,
+        device="auto",
+    )
 
     render_cb = LiveRenderCallback(
         train_env,
@@ -220,12 +257,18 @@ def train(total_timesteps=200_000, render_freq=10_000, target_radius=0.06):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="可视化训练 Aim Trainer")
     parser.add_argument("--steps", type=int, default=200_000)
-    parser.add_argument("--render-freq", type=int, default=10_000,
-                        help="每隔多少步渲染一次 agent 演示（0 表示不渲染）")
-    parser.add_argument("--target-radius", type=float, default=0.06,
-                        help="目标命中半径")
+    parser.add_argument(
+        "--render-freq",
+        type=int,
+        default=10_000,
+        help="每隔多少步渲染一次 agent 演示（0 表示不渲染）",
+    )
+    parser.add_argument(
+        "--target-radius", type=float, default=0.06, help="目标命中半径"
+    )
     args = parser.parse_args()
 
     train(

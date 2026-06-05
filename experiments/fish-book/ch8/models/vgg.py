@@ -1,12 +1,54 @@
 """VGG 系列模型定义。"""
+
 import torch.nn as nn
 
 # VGG 配置: 数字 = Conv2d 输出通道, 'M' = MaxPool2d
 VGG_CFGS = {
-    "VGG11":  [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
-    "VGG13":  [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
-    "VGG16":  [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
-    "VGG19":  [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"],
+    "VGG11": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "VGG13": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "VGG16": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+    ],
+    "VGG19": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+    ],
 }
 
 
@@ -20,8 +62,14 @@ class VGG(nn.Module):
         fc_channels: 全连接层神经元数列表（默认 [4096, 4096]）
     """
 
-    def __init__(self, name="VGG16", in_channels=3, num_classes=200,
-                 fc_channels=None, dropout=0.5):
+    def __init__(
+        self,
+        name="VGG16",
+        in_channels=3,
+        num_classes=200,
+        fc_channels=None,
+        dropout=0.5,
+    ):
         super().__init__()
         cfg = VGG_CFGS[name]
         fc_channels = fc_channels or [4096, 4096]
@@ -30,16 +78,18 @@ class VGG(nn.Module):
         # 计算卷积输出尺寸：Tiny ImageNet 64×64 → 5次池化 → 2×2
         # 完整 ImageNet 224×224 → 5次池化 → 7×7
         pool_times = sum(1 for v in cfg if v == "M")
-        final_size = 64 // (2 ** pool_times)  # 64 / 32 = 2
+        final_size = 64 // (2**pool_times)  # 64 / 32 = 2
         fc_input = 512 * final_size * final_size
 
         fc_layers = []
         for ch in fc_channels:
-            fc_layers.extend([
-                nn.Linear(fc_input, ch),
-                nn.ReLU(inplace=True),
-                nn.Dropout(dropout),
-            ])
+            fc_layers.extend(
+                [
+                    nn.Linear(fc_input, ch),
+                    nn.ReLU(inplace=True),
+                    nn.Dropout(dropout),
+                ]
+            )
             fc_input = ch
         fc_layers.append(nn.Linear(fc_input, num_classes))
         self.classifier = nn.Sequential(*fc_layers)
@@ -61,8 +111,7 @@ class VGG(nn.Module):
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_out",
-                                        nonlinearity="relu")
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):

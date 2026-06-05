@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-plt.rcParams['font.sans-serif'] = ['STHeiti']  # macOS 常用中文字体
-plt.rcParams['axes.unicode_minus'] = False    # 解决负号显示问题
+plt.rcParams["font.sans-serif"] = ["STHeiti"]  # macOS 常用中文字体
+plt.rcParams["axes.unicode_minus"] = False  # 解决负号显示问题
 
 # -----------------------------
 # 生成数据
@@ -16,6 +16,7 @@ y_np = np.sin(x_np / 2)
 # 转换为 PyTorch tensor
 x = torch.tensor(x_np, dtype=torch.float32).unsqueeze(1)  # [1000,1]
 y = torch.tensor(y_np, dtype=torch.float32).unsqueeze(1)  # [1000,1]
+
 
 # -----------------------------
 # 定义神经网络
@@ -28,18 +29,19 @@ class SinNN(nn.Module):
             nn.Tanh(),
             nn.Linear(3, 3),
             nn.Tanh(),
-            nn.Linear(3, 1)  # 输出1
+            nn.Linear(3, 1),  # 输出1
         )
 
     def forward(self, x):
         return self.net(x)
+
 
 model = SinNN()
 
 # -----------------------------
 # 损失函数 & 优化器
 # -----------------------------
-criterion = nn.MSELoss()          # 均方误差
+criterion = nn.MSELoss()  # 均方误差
 optimizer = optim.Adam(model.parameters(), lr=0.1)
 
 # -----------------------------
@@ -55,19 +57,19 @@ for epoch in range(epochs):
     optimizer.step()
 
     if (epoch + 1) % 200 == 0:
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item():.6f}')
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item():.6f}")
 
 # -----------------------------
 # 绘图对比
 # -----------------------------
 y_fit = model(x).detach().numpy()
 
-plt.figure(figsize=(10,6))
-plt.plot(x_np, y_np, label='sin(x)', linewidth=2)
-plt.plot(x_np, y_fit, label='NN Fit', linewidth=2, linestyle='--')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title('神经网络拟合 sin(x)')
+plt.figure(figsize=(10, 6))
+plt.plot(x_np, y_np, label="sin(x)", linewidth=2)
+plt.plot(x_np, y_fit, label="NN Fit", linewidth=2, linestyle="--")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.title("神经网络拟合 sin(x)")
 plt.legend()
-plt.grid(True, linestyle='--', alpha=0.7)
+plt.grid(True, linestyle="--", alpha=0.7)
 plt.show()

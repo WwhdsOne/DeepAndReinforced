@@ -16,9 +16,9 @@ class Adam:
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
-        self.m = {}    # 一阶矩估计（梯度的指数移动平均）
-        self.v = {}    # 二阶矩估计（梯度平方的指数移动平均）
-        self.t = 0     # 迭代次数
+        self.m = {}  # 一阶矩估计（梯度的指数移动平均）
+        self.v = {}  # 二阶矩估计（梯度平方的指数移动平均）
+        self.t = 0  # 迭代次数
 
     def change_lr(self, lr):
         self.lr = lr
@@ -40,11 +40,13 @@ class Adam:
             self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * grads[key]
 
             # 二阶矩估计：vt = beta2 * vt-1 + (1 - beta2) * gt^2
-            self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * (grads[key] ** 2)
+            self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * (
+                grads[key] ** 2
+            )
 
             # 偏差修正
-            m_hat = self.m[key] / (1 - self.beta1 ** self.t)
-            v_hat = self.v[key] / (1 - self.beta2 ** self.t)
+            m_hat = self.m[key] / (1 - self.beta1**self.t)
+            v_hat = self.v[key] / (1 - self.beta2**self.t)
 
             # 参数更新
             params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)

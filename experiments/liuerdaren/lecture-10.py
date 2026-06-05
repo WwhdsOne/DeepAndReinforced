@@ -15,14 +15,14 @@ class ConvNet(nn.Module):
         # 输入 通道数：1 卷积核大小：5 填充：2
 
         # 策略：快速缩小空间尺寸，减少计算量
-        self.conv1 = nn.Conv2d(1, 16, 3, padding=1)   # 28→28
-        self.pool1 = nn.MaxPool2d(2, 2)               # 28→14
+        self.conv1 = nn.Conv2d(1, 16, 3, padding=1)  # 28→28
+        self.pool1 = nn.MaxPool2d(2, 2)  # 28→14
 
         self.conv2 = nn.Conv2d(16, 32, 3, padding=1)  # 14→14
-        self.pool2 = nn.MaxPool2d(2, 2)               # 14→7
+        self.pool2 = nn.MaxPool2d(2, 2)  # 14→7
 
         self.conv3 = nn.Conv2d(32, 64, 3, padding=1)  # 7→7
-        self.pool3 = nn.MaxPool2d(2, 2)               # 7→3
+        self.pool3 = nn.MaxPool2d(2, 2)  # 7→3
 
         self.fc1 = nn.Linear(64 * 3 * 3, 128)
         self.fc2 = nn.Linear(128, 10)
@@ -74,14 +74,20 @@ def train(model, train_loader, criterion, optimizer, epoch):
         correct += predicted.eq(target).sum().item()
 
         if batch_idx % 100 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                       100. * batch_idx / len(train_loader), loss.item()))
-            print('Train Accuracy: {:.2f}%'.format(100. * correct / total))
-            print('-' * 10)
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    epoch,
+                    batch_idx * len(data),
+                    len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
+                )
+            )
+            print("Train Accuracy: {:.2f}%".format(100.0 * correct / total))
+            print("-" * 10)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     batch_size = 128
     train_loader, test_loader = get_mnist_loaders(batch_size=batch_size, normalize=True)
     print(f"训练集大小：{len(train_loader.dataset)}")

@@ -5,6 +5,7 @@
     python train.py --model VGG16 --epochs 30 --batch-size 128
     python train.py --model VGG19 --epochs 50 --lr 0.001
 """
+
 import argparse
 import json
 import sys
@@ -31,19 +32,25 @@ from models import get_model
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Tiny ImageNet-200 训练")
-    parser.add_argument("--model", default="VGG16",
-                        help="模型名称，如 VGG16, VGG19 (默认 VGG16)")
+    parser.add_argument(
+        "--model", default="VGG16", help="模型名称，如 VGG16, VGG19 (默认 VGG16)"
+    )
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--weight-decay", type=float, default=5e-4)
-    parser.add_argument("--data-root", default="../data",
-                        help="包含 tiny-imagenet-200 的目录 (默认 ../data)")
-    parser.add_argument("--device", default="auto",
-                        help="训练设备: cuda, cpu, auto (默认 auto)")
-    parser.add_argument("--dropout", type=float, default=0.5,
-                        help="Dropout 比率 (默认 0.5)")
+    parser.add_argument(
+        "--data-root",
+        default="../data",
+        help="包含 tiny-imagenet-200 的目录 (默认 ../data)",
+    )
+    parser.add_argument(
+        "--device", default="auto", help="训练设备: cuda, cpu, auto (默认 auto)"
+    )
+    parser.add_argument(
+        "--dropout", type=float, default=0.5, help="Dropout 比率 (默认 0.5)"
+    )
     return parser.parse_args()
 
 
@@ -70,10 +77,10 @@ def train_one_epoch(model, loader, criterion, optimizer, device):
         correct += predicted.eq(targets).sum().item()
 
         # 实时更新进度条后缀
-        acc = 100. * correct / total_samples
+        acc = 100.0 * correct / total_samples
         pbar.set_postfix(loss=loss.item(), acc=f"{acc:.1f}%")
 
-    return total_loss / len(loader), 100. * correct / len(loader.dataset)
+    return total_loss / len(loader), 100.0 * correct / len(loader.dataset)
 
 
 @torch.no_grad()
@@ -94,7 +101,7 @@ def validate(model, loader, criterion, device):
 
         pbar.set_postfix(loss=loss.item())
 
-    return total_loss / len(loader), 100. * correct / len(loader.dataset)
+    return total_loss / len(loader), 100.0 * correct / len(loader.dataset)
 
 
 def main():
@@ -112,28 +119,34 @@ def main():
         device = torch.device(args.device)
     print(f"设备: {device}")
     print(f"模型: {args.model}")
-    print(f"Epochs: {args.epochs} | Batch size: {args.batch_size} | "
-          f"LR: {args.lr}")
+    print(f"Epochs: {args.epochs} | Batch size: {args.batch_size} | " f"LR: {args.lr}")
 
     # ── 数据 ─────────────────────────────────────
     print("\n正在加载 Tiny ImageNet-200...")
     train_loader, val_loader = get_loaders(args.data_root, args.batch_size)
-    print(f"训练集: {len(train_loader.dataset)} 张 | "
-          f"验证集: {len(val_loader.dataset)} 张")
+    print(
+        f"训练集: {len(train_loader.dataset)} 张 | "
+        f"验证集: {len(val_loader.dataset)} 张"
+    )
 
     # ── 模型 ─────────────────────────────────────
     model = get_model(args.model, num_classes=200, dropout=args.dropout).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                          momentum=args.momentum,
-                          weight_decay=args.weight_decay)
+    optimizer = optim.SGD(
+        model.parameters(),
+        lr=args.lr,
+        momentum=args.momentum,
+        weight_decay=args.weight_decay,
+    )
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="max", factor=0.1, patience=5
     )
 
     # ── 训练循环 ─────────────────────────────────
-    print(f"\n{'Epoch':>5}  {'Train Loss':>11}  {'Train Acc':>10}  "
-          f"{'Val Loss':>9}  {'Val Acc':>9}  {'Time':>6}")
+    print(
+        f"\n{'Epoch':>5}  {'Train Loss':>11}  {'Train Acc':>10}  "
+        f"{'Val Loss':>9}  {'Val Acc':>9}  {'Time':>6}"
+    )
     print("-" * 60)
 
     best_acc = 0
@@ -160,8 +173,10 @@ def main():
         if val_acc > best_acc:
             best_acc = val_acc
 
-        print(f"{epoch:5d}  {train_loss:11.4f}  {train_acc:9.2f}%  "
-              f"{val_loss:9.4f}  {val_acc:8.2f}%  {epoch_time:5.0f}s{marker}")
+        print(
+            f"{epoch:5d}  {train_loss:11.4f}  {train_acc:9.2f}%  "
+            f"{val_loss:9.4f}  {val_acc:8.2f}%  {epoch_time:5.0f}s{marker}"
+        )
 
     # ── 保存 ─────────────────────────────────────
     artifacts_dir = Path(__file__).parent / "artifacts"

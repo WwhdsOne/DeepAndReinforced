@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
@@ -34,8 +35,8 @@ class TestAimTrainerEnv:
         env.crosshair = np.array([0.02, 0.98], dtype=np.float32)
         action = np.array([-0.05, 0.05], dtype=np.float32)
         obs, _, _, _, _ = env.step(action)
-        assert np.allclose(obs[0], 0.0)   # clamp left
-        assert np.allclose(obs[1], 1.0)   # clamp top
+        assert np.allclose(obs[0], 0.0)  # clamp left
+        assert np.allclose(obs[1], 1.0)  # clamp top
 
     def test_hit_detection(self, env):
         env.reset()
@@ -94,7 +95,9 @@ class TestAimTrainerEnv:
         assert np.isclose(env.action_step, 0.016)
 
     def test_distance_delta_reward_penalizes_moving_away(self):
-        env = AimTrainerEnv(max_steps=100, n_targets=1, target_radius=0.04, lock_on_speed=0.0)
+        env = AimTrainerEnv(
+            max_steps=100, n_targets=1, target_radius=0.04, lock_on_speed=0.0
+        )
         env.reset(seed=0)
         env.targets[0] = np.array([0.6, 0.5], dtype=np.float32)
         env.target_alive[0] = True
@@ -125,17 +128,24 @@ class TestAimTrainerEnv:
         env._prev_locked_distance = 0.1
         env._best_locked_distance = 0.1
 
-        _, reward_closer, _, _, info_closer = env.step(np.array([0.01, 0.0], dtype=np.float32))
+        _, reward_closer, _, _, info_closer = env.step(
+            np.array([0.01, 0.0], dtype=np.float32)
+        )
 
         env.crosshair = np.array([0.5, 0.5], dtype=np.float32)
         env._locked_target_idx = 0
         env._prev_locked_distance = 0.1
         env._best_locked_distance = 0.1
-        _, reward_away, _, _, info_away = env.step(np.array([-0.01, 0.0], dtype=np.float32))
+        _, reward_away, _, _, info_away = env.step(
+            np.array([-0.01, 0.0], dtype=np.float32)
+        )
 
         assert info_closer["reward_distance_delta"] > 0
         assert info_away["reward_distance_delta"] < 0
-        assert abs(info_away["reward_distance_delta"]) >= abs(info_closer["reward_distance_delta"]) * 1.2
+        assert (
+            abs(info_away["reward_distance_delta"])
+            >= abs(info_closer["reward_distance_delta"]) * 1.2
+        )
         assert abs(reward_away) >= abs(reward_closer) * 1.2
 
     def test_pushing_into_wall_counts_as_idle(self):
@@ -150,14 +160,20 @@ class TestAimTrainerEnv:
         env.targets[0] = np.array([0.8, 0.5], dtype=np.float32)
         env.target_alive[0] = True
 
-        _, reward, _, _, _ = env.step(np.array([-env.action_step, 0.0], dtype=np.float32))
+        _, reward, _, _, _ = env.step(
+            np.array([-env.action_step, 0.0], dtype=np.float32)
+        )
 
         assert reward <= -0.6
 
     def test_step_info_contains_reward_breakdown(self):
-        env = AimTrainerEnv(max_steps=100, n_targets=1, target_radius=0.04, lock_on_speed=0.0)
+        env = AimTrainerEnv(
+            max_steps=100, n_targets=1, target_radius=0.04, lock_on_speed=0.0
+        )
         env.reset(seed=0)
-        _, reward, _, _, info = env.step(np.array([env.action_step, 0.0], dtype=np.float32))
+        _, reward, _, _, info = env.step(
+            np.array([env.action_step, 0.0], dtype=np.float32)
+        )
 
         assert "reward_total" in info
         assert "reward_progress" in info

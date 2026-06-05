@@ -6,6 +6,7 @@ Tiny ImageNet-200 数据加载器。
 
     train_loader, val_loader = get_loaders("../data", batch_size=128)
 """
+
 from pathlib import Path
 from urllib.request import urlretrieve
 import zipfile
@@ -117,32 +118,40 @@ def get_transform(train=True):
         std=[0.229, 0.224, 0.225],
     )
     if train:
-        return transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(64, padding=4),
+        return transforms.Compose(
+            [
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(64, padding=4),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        )
+    return transforms.Compose(
+        [
             transforms.ToTensor(),
             normalize,
-        ])
-    return transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-    ])
+        ]
+    )
 
 
 def get_loaders(data_root, batch_size=128, num_workers=4):
     """返回 (train_loader, val_loader)。"""
     ensure_dataset(data_root)
-    train_set = TinyImageNet(data_root, split="train",
-                             transform=get_transform(train=True))
-    val_set = TinyImageNet(data_root, split="val",
-                           transform=get_transform(train=False))
+    train_set = TinyImageNet(
+        data_root, split="train", transform=get_transform(train=True)
+    )
+    val_set = TinyImageNet(data_root, split="val", transform=get_transform(train=False))
 
     train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=batch_size, shuffle=True,
+        train_set,
+        batch_size=batch_size,
+        shuffle=True,
         num_workers=num_workers,
     )
     val_loader = torch.utils.data.DataLoader(
-        val_set, batch_size=batch_size, shuffle=False,
+        val_set,
+        batch_size=batch_size,
+        shuffle=False,
         num_workers=num_workers,
     )
     return train_loader, val_loader
