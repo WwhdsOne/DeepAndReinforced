@@ -78,6 +78,15 @@ uv run mnist-visualize
 uv run python experiments/fish-book/ch5/multiLayer.py
 ```
 
+## hands-on-rl — 动手学强化学习
+
+《动手学强化学习》章节代码与实验，位于 `experiments/hands-on-rl/`：
+- `bernoulli-bandit/` — 多臂老虎机（伯努利臂），含 `EpsilonGreedy` / `DecayingEpsilonGreedy` 策略对比
+
+```bash
+uv run python experiments/hands-on-rl/bernoulli-bandit/main.py
+```
+
 # 学习日志
 
 每日学习进度记录在 `learning-logs/`，格式 `YYYY-MM-DD.md`。
