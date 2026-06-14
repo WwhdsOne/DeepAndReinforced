@@ -24,6 +24,8 @@ Thumbs.db
 experiments/*/artifacts/
 experiments/*/data/
 *.log
+food-11*
+*.pth
 
 # === 测试 ===
 .pytest_cache/
