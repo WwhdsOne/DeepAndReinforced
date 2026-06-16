@@ -27,6 +27,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.4.0",
+    "torchview>=0.2.7",
 ]
 
 [tool.black]

@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 520" font-family="Arial, sans-serif">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="700" height="520" fill="#f8fafc" rx="12"/>
+
+  <!-- 标题 -->
+  <rect x="20" y="15" width="660" height="40" rx="8" fill="url(#headerGrad)"/>
+  <text x="350" y="42" text-anchor="middle" font-size="18" font-weight="bold" fill="white">HW04 原版代码结构图</text>
+
+  <!-- ========== 数据流部分 ========== -->
+  <text x="40" y="90" font-size="13" font-weight="bold" fill="#334155">数据流</text>
+
+  <!-- Dataset -->
+  <rect x="30" y="100" width="160" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="110" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">myDataset</text>
+  <text x="110" y="140" text-anchor="middle" font-size="10" fill="#475569">metadata.json → speaker2id</text>
+  <text x="110" y="155" text-anchor="middle" font-size="10" fill="#475569">uttr-*.pt → mel 频谱图</text>
+
+  <!-- DataLoader -->
+  <rect x="230" y="100" width="160" height="70" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="310" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">get_dataloader</text>
+  <text x="310" y="140" text-anchor="middle" font-size="10" fill="#475569">random_split 9:1</text>
+  <text x="310" y="155" text-anchor="middle" font-size="10" fill="#475569">pad_sequence(batch_first)</text>
+
+  <!-- 箭头 Dataset → DataLoader -->
+  <line x1="190" y1="135" x2="228" y2="135" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 设备检测 -->
+  <rect x="450" y="100" width="220" height="85" rx="8" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="560" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#0c4a6e">设备检测 get_device()</text>
+  <text x="560" y="142" text-anchor="middle" font-size="10" fill="#475569">① CUDA (torch.cuda)</text>
+  <text x="560" y="158" text-anchor="middle" font-size="10" fill="#475569">② MPS (Apple Silicon)</text>
+  <text x="560" y="174" text-anchor="middle" font-size="10" fill="#475569">③ CPU (兜底)</text>
+
+  <!-- ========== 模型部分 ========== -->
+  <text x="40" y="215" font-size="13" font-weight="bold" fill="#334155">Classifier 模型</text>
+
+  <!-- 输入 -->
+  <rect x="30" y="230" width="110" height="40" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="85" y="255" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">输入 mels</text>
+
+  <!-- prenet -->
+  <rect x="175" y="230" width="110" height="40" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="230" y="255" text-anchor="middle" font-size="11" font-weight="bold" fill="#3730a3">prenet</text>
+
+  <!-- permute -->
+  <rect x="320" y="230" width="90" height="40" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="365" y="255" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">permute</text>
+
+  <!-- TransformerEncoderLayer -->
+  <rect x="30" y="305" width="220" height="60" rx="8" fill="#fae8ff" stroke="#a855f7" stroke-width="2" filter="url(#shadow)"/>
+  <text x="140" y="330" text-anchor="middle" font-size="12" font-weight="bold" fill="#7c3aed">TransformerEncoderLayer</text>
+  <text x="140" y="348" text-anchor="middle" font-size="10" fill="#475569">d_model=80, nhead=2, ff=256, 单层</text>
+
+  <!-- mean pool（独立步骤） -->
+  <rect x="270" y="305" width="85" height="60" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="312" y="328" text-anchor="middle" font-size="10" font-weight="bold" fill="#854d0e">mean pool</text>
+  <text x="312" y="344" text-anchor="middle" font-size="9" fill="#854d0e">mean(dim=1)</text>
+  <text x="312" y="358" text-anchor="middle" font-size="9" fill="#854d0e">压缩时间维度</text>
+
+  <!-- pred_layer -->
+  <rect x="375" y="305" width="140" height="60" rx="8" fill="#fce7f3" stroke="#db2777" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="445" y="325" text-anchor="middle" font-size="11" font-weight="bold" fill="#9d174d">pred_layer</text>
+  <text x="445" y="342" text-anchor="middle" font-size="10" fill="#475569">Linear(80→80)</text>
+  <text x="445" y="356" text-anchor="middle" font-size="10" fill="#475569">ReLU → Linear(80→600)</text>
+
+  <!-- 输出 -->
+  <rect x="535" y="315" width="115" height="40" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="592" y="340" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">logits (600类)</text>
+
+  <!-- 箭头链 -->
+  <line x1="140" y1="250" x2="173" y2="250" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="285" y1="250" x2="318" y2="250" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="365" y1="270" x2="140" y2="303" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="250" y1="335" x2="268" y2="335" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="355" y1="335" x2="373" y2="335" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="515" y1="335" x2="533" y2="335" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 维度标注 -->
+  <text x="85" y="285" text-anchor="middle" font-size="9" fill="#94a3b8">(batch, 128, 40)</text>
+  <text x="230" y="285" text-anchor="middle" font-size="9" fill="#94a3b8">(batch, 128, 80)</text>
+  <text x="365" y="285" text-anchor="middle" font-size="9" fill="#94a3b8">(128, batch, 80)</text>
+  <text x="312" y="380" text-anchor="middle" font-size="9" fill="#94a3b8">(batch, 80)</text>
+  <text x="445" y="380" text-anchor="middle" font-size="9" fill="#94a3b8">(batch, 600)</text>
+
+  <!-- ========== 训练循环部分 ========== -->
+  <text x="40" y="415" font-size="13" font-weight="bold" fill="#334155">训练循环</text>
+
+  <rect x="30" y="425" width="640" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <text x="50" y="450" font-size="11" fill="#1c1917">
+    <tspan x="50" dy="0">total_steps = 70000（约 36 epoch）</tspan>
+    <tspan x="50" dy="18">优化器：AdamW(lr=1e-3) + CosineWarmup(warmup=1000 步)</tspan>
+    <tspan x="50" dy="18">每 2000 步验证 | 每 10000 步保存最佳模型 | 损失函数：CrossEntropyLoss</tspan>
+  </text>
+
+</svg>
