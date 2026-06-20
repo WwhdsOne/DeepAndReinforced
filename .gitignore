@@ -23,6 +23,7 @@ Thumbs.db
 # === 产物（不入 git）===
 experiments/*/artifacts/
 experiments/*/data/
+experiments/ML2021-Spring/HW05/DATA
 *.log
 food-11*
 *.pth
