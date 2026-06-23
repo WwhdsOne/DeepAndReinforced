@@ -27,6 +27,8 @@ experiments/ML2021-Spring/HW05/DATA
 *.log
 food-11*
 *.pth
+experiments/ML2021-Spring/HW06/faces
+experiments/ML2021-Spring/HW06/crypko.zip
 
 # === 测试 ===
 .pytest_cache/
