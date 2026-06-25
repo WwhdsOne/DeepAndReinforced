@@ -227,8 +227,6 @@ def train(args):
     # 优化器 (WGAN-GP 论文推荐 betas)
     opt_D = optim.Adam(D.parameters(), lr=args.lr, betas=(0.0, 0.9))
     opt_G = optim.Adam(G.parameters(), lr=args.lr, betas=(0.0, 0.9))
-    scheduler_D = optim.lr_scheduler.CosineAnnealingLR(opt_D, T_max=args.n_epoch)
-    scheduler_G = optim.lr_scheduler.CosineAnnealingLR(opt_G, T_max=args.n_epoch)
 
     # 固定采样噪声（用于可视化）
     z_sample = torch.randn(100, args.z_dim, device=device)
@@ -246,9 +244,6 @@ def train(args):
             opt_D.load_state_dict(ckpt["opt_D"])
             start_epoch = ckpt["epoch"]
             steps = ckpt["steps"]
-            for _ in range(start_epoch):
-                scheduler_D.step()
-                scheduler_G.step()
             print(f"从检查点恢复: Epoch {start_epoch}, Steps {steps}")
 
     # 损失记录文件
@@ -316,11 +311,7 @@ def train(args):
                 'Loss_D': f"{loss_D.item():.4f}",
                 'Loss_G': f"{loss_g_val:.4f}",
                 'Step': steps,
-                'LR': f"{scheduler_D.get_last_lr()[0]:.2e}",
             })
-
-        scheduler_D.step()
-        scheduler_G.step()
 
         avg_d = epoch_loss_d / n_batches
         avg_g = epoch_loss_g / n_batches
