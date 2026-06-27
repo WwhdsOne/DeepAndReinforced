@@ -29,7 +29,10 @@ food-11*
 *.pth
 experiments/ML2021-Spring/HW06/faces
 experiments/ML2021-Spring/HW06/crypko.zip
-
+experiments/ML2021-Spring/HW06/output
+experiments/ML2021-Spring/HW06/checkpoint
+experiments/ML2021-Spring/HW07/data
+experiments/ML2021-Spring/HW07/hw7_*.json
 # === 测试 ===
 .pytest_cache/
 .mypy_cache/

@@ -5,6 +5,7 @@ description = "Machine learning experiments managed with uv."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "accelerate>=1.14.0",
     "black>=26.5.1",
     "eel>=0.18.2",
     "fairseq>=0.12.2",
@@ -26,6 +27,7 @@ dependencies = [
     "torch>=2.7.0",
     "torchvision>=0.22.0",
     "tqdm>=4.67.0",
+    "transformers>=5.12.1",
 ]
 
 [dependency-groups]

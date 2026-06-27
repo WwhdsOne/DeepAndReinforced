@@ -40,6 +40,8 @@ def parse_args():
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--resume", action="store_true", help="从检查点恢复训练")
     parser.add_argument("--bf16", type=bool, default=True, help="使用 bfloat16 混合精度训练")
+    parser.add_argument("--mode", type=str, default="both", choices=["train", "generate", "both"],
+                        help="运行模式: train=仅训练, generate=仅推理, both=训练+推理")
     return parser.parse_args()
 
 
@@ -395,5 +397,7 @@ def generate(args, n_output=1000):
 if __name__ == "__main__":
     args = parse_args()
     print(f"参数: {vars(args)}")
-    train(args)
-    generate(args)
+    if args.mode in ("train", "both"):
+        train(args)
+    if args.mode in ("generate", "both"):
+        generate(args)
