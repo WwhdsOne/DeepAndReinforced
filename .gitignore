@@ -33,6 +33,7 @@ experiments/ML2021-Spring/HW06/output
 experiments/ML2021-Spring/HW06/checkpoint
 experiments/ML2021-Spring/HW07/data
 experiments/ML2021-Spring/HW07/hw7_*.json
+experiments/ML2021-Spring/HW10/data
 # === 测试 ===
 .pytest_cache/
 .mypy_cache/

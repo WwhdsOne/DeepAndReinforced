@@ -20,6 +20,7 @@ dependencies = [
     "pillow>=11.2.1",
     "pygame>=2.6.0",
     "pyglet>=2.1.14",
+    "pytorchcv>=0.0.74",
     "qqdm>=0.0.7",
     "sentencepiece>=0.2.1",
     "stable-baselines3>=2.3.0",
