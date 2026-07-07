@@ -34,6 +34,10 @@ experiments/ML2021-Spring/HW06/checkpoint
 experiments/ML2021-Spring/HW07/data
 experiments/ML2021-Spring/HW07/hw7_*.json
 experiments/ML2021-Spring/HW10/data
+experiments/ML2021-Spring/HW11/real_or_drawing
+experiments/ML2021-Spring/HW11/ml2021spring-hw11.zip
+experiments/ML2021-Spring/HW11/*.bin
+experiments/ML2021-Spring/HW11/*_submission.csv
 # === 测试 ===
 .pytest_cache/
 .mypy_cache/
