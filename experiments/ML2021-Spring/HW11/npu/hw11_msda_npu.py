@@ -13,6 +13,7 @@ HW11 MSDA (Multi-Source Domain Adaptation) - NPU 版本
 
 import argparse
 import random
+import warnings
 import numpy as np
 import cv2
 import torch
@@ -23,6 +24,8 @@ import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader, Dataset, ConcatDataset
 import pandas as pd
+
+warnings.filterwarnings("ignore", message=".*lr_scheduler.step.*before.*optimizer.step.*")
 
 # ===================== 配置 =====================
 
