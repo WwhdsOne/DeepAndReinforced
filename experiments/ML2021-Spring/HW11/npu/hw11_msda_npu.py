@@ -238,15 +238,15 @@ def train_epoch_msda(source_loader, target_loader, models, optimizers, criterion
         scaler.step(optimizer_C)
         scaler.update()
 
+        for sched in lr_schedulers:
+            sched.step()
+
         optimizer_D.zero_grad()
         optimizer_F.zero_grad()
         optimizer_C.zero_grad()
 
         total_hit += torch.sum(torch.argmax(class_logits, dim=1) == source_label).item()
         total_num += n_source
-
-        for sched in lr_schedulers:
-            sched.step()
 
         print(i, end='\r')
 
