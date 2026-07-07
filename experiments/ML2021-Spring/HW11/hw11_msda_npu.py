@@ -26,7 +26,10 @@ import pandas as pd
 
 # ===================== 配置 =====================
 
-LAMB = 0.1
+LAMB_MAX = 1.0
+GAMMA = 10.0
+LR = 1e-3
+WARMUP_RATIO = 0.1
 MM_WEIGHT = 0.01
 NUM_EPOCHS = 200
 PSEUDO_EPOCHS = 50
@@ -129,6 +132,27 @@ class DomainClassifier(nn.Module):
         return self.layer(h)
 
 
+# ===================== 调度函数 =====================
+
+def adaptive_lambda(step, total_steps, gamma=GAMMA):
+    """DANN 论文的自适应 lambda: 从 0 渐增到 LAMB_MAX"""
+    p = step / total_steps
+    return LAMB_MAX * (2.0 / (1.0 + np.exp(-gamma * p)) - 1.0)
+
+
+def create_lr_scheduler(optimizer, total_steps, warmup_ratio=WARMUP_RATIO):
+    """Warmup + Cosine Annealing"""
+    warmup_steps = int(total_steps * warmup_ratio)
+
+    def lr_lambda(step):
+        if step < warmup_steps:
+            return step / max(1, warmup_steps)
+        progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+        return 0.5 * (1.0 + np.cos(np.pi * progress))
+
+    return optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+
 # ===================== 矩匹配损失 =====================
 
 def moment_matching_loss(source_features, target_features):
@@ -172,7 +196,7 @@ def balanced_predict(logits, num_classes=10):
 
 # ===================== 训练循环 =====================
 
-def train_epoch_msda(source_loader, target_loader, models, optimizers, criterions, scaler, lamb, mm_weight):
+def train_epoch_msda(source_loader, target_loader, models, optimizers, criterions, scaler, mm_weight, global_step, total_steps, lr_schedulers):
     feature_extractor, label_predictor, domain_classifier = models
     optimizer_F, optimizer_C, optimizer_D = optimizers
     class_criterion, domain_criterion = criterions
@@ -181,6 +205,7 @@ def train_epoch_msda(source_loader, target_loader, models, optimizers, criterion
     total_hit, total_num = 0.0, 0.0
 
     for i, ((source_data, source_label), (target_data, _)) in enumerate(zip(source_loader, target_loader)):
+        lamb = adaptive_lambda(global_step + i, total_steps)
         source_data = source_data.npu()
         source_label = source_label.npu()
         target_data = target_data.npu()
@@ -219,9 +244,13 @@ def train_epoch_msda(source_loader, target_loader, models, optimizers, criterion
 
         total_hit += torch.sum(torch.argmax(class_logits, dim=1) == source_label).item()
         total_num += n_source
+
+        for sched in lr_schedulers:
+            sched.step()
+
         print(i, end='\r')
 
-    return running_D_loss / (i + 1), running_F_loss / (i + 1), total_hit / total_num
+    return running_D_loss / (i + 1), running_F_loss / (i + 1), total_hit / total_num, global_step + i + 1
 
 
 # ===================== 伪标签 =====================
@@ -316,8 +345,9 @@ def main():
     parser.add_argument('--epochs', type=int, default=NUM_EPOCHS)
     parser.add_argument('--pseudo-epochs', type=int, default=PSEUDO_EPOCHS)
     parser.add_argument('--pseudo-threshold', type=float, default=PSEUDO_THRESHOLD)
-    parser.add_argument('--lamb', type=float, default=LAMB)
+    parser.add_argument('--lamb-max', type=float, default=LAMB_MAX)
     parser.add_argument('--mm-weight', type=float, default=MM_WEIGHT)
+    parser.add_argument('--lr', type=float, default=LR)
     args = parser.parse_args()
 
     # ---- 数据加载 ----
@@ -347,11 +377,19 @@ def main():
     class_criterion = nn.CrossEntropyLoss()
     domain_criterion = nn.BCEWithLogitsLoss()
 
-    optimizer_F = optim.Adam(feature_extractor.parameters())
-    optimizer_C = optim.Adam(label_predictor.parameters())
-    optimizer_D = optim.Adam(domain_classifier.parameters())
+    optimizer_F = optim.Adam(feature_extractor.parameters(), lr=args.lr)
+    optimizer_C = optim.Adam(label_predictor.parameters(), lr=args.lr)
+    optimizer_D = optim.Adam(domain_classifier.parameters(), lr=args.lr)
 
     scaler = torch.amp.GradScaler("npu")
+
+    # LR 调度: warmup + cosine，按 step 调度
+    steps_per_epoch = len(source_loader)
+    total_steps = args.epochs * steps_per_epoch
+    sched_F = create_lr_scheduler(optimizer_F, total_steps)
+    sched_C = create_lr_scheduler(optimizer_C, total_steps)
+    sched_D = create_lr_scheduler(optimizer_D, total_steps)
+    lr_schedulers = [sched_F, sched_C, sched_D]
 
     models = (feature_extractor, label_predictor, domain_classifier)
     optimizers = (optimizer_F, optimizer_C, optimizer_D)
@@ -360,17 +398,22 @@ def main():
     # ---- Phase 1: MSDA 训练 ----
     if args.mode in ('train', 'all'):
         print(f"\n=== MSDA 训练 ({args.epochs} epochs) ===")
-        print(f"  lambda={args.lamb}, mm_weight={args.mm_weight}")
+        print(f"  lambda: 0 → {args.lamb_max} (自适应), mm_weight={args.mm_weight}")
+        print(f"  lr: {args.lr}, warmup={WARMUP_RATIO}, total_steps={total_steps}")
         print(f"  源域数: {len(SOURCE_DOMAINS)}, 总样本: {len(multi_source)}")
+        global_step = 0
         try:
             for epoch in range(args.epochs):
-                d_loss, f_loss, acc = train_epoch_msda(
+                d_loss, f_loss, acc, global_step = train_epoch_msda(
                     source_loader, target_loader, models, optimizers, criterions,
-                    scaler, args.lamb, args.mm_weight,
+                    scaler, args.mm_weight, global_step, total_steps, lr_schedulers,
                 )
                 save_models(feature_extractor, label_predictor)
+                current_lamb = adaptive_lambda(global_step, total_steps)
+                current_lr = optimizer_F.param_groups[0]['lr']
                 print(f'epoch {epoch:>3d}: D loss: {d_loss:6.4f}, '
-                      f'F loss: {f_loss:6.4f}, acc {acc:6.4f}')
+                      f'F loss: {f_loss:6.4f}, acc {acc:6.4f}, '
+                      f'λ={current_lamb:.3f}, lr={current_lr:.5f}')
         except KeyboardInterrupt:
             print("\n训练中断，保存当前模型...")
             save_models(feature_extractor, label_predictor)
