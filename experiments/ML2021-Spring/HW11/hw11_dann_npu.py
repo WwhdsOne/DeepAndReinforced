@@ -87,26 +87,17 @@ class DomainClassifier(nn.Module):
     def forward(self, h):
         return self.layer(h)
 
-# ===================== 初始化 =====================
-
-feature_extractor = FeatureExtractor().npu()
-label_predictor = LabelPredictor().npu()
-domain_classifier = DomainClassifier().npu()
-
-class_criterion = nn.CrossEntropyLoss()
-domain_criterion = nn.BCEWithLogitsLoss()
-
-optimizer_F = optim.Adam(feature_extractor.parameters())
-optimizer_C = optim.Adam(label_predictor.parameters())
-optimizer_D = optim.Adam(domain_classifier.parameters())
-
-scaler = torch.amp.GradScaler("npu")
-
 LAMB = 0.1
+NUM_EPOCHS = 200
+EXTRACTOR_PATH = 'extractor_model.bin'
+PREDICTOR_PATH = 'predictor_model.bin'
 
 # ===================== 训练 =====================
 
-def train_epoch(source_dataloader, target_dataloader, lamb):
+def train_epoch(source_dataloader, target_dataloader, lamb,
+                feature_extractor, label_predictor, domain_classifier,
+                domain_criterion, class_criterion,
+                optimizer_F, optimizer_C, optimizer_D, scaler):
     running_D_loss, running_F_loss = 0.0, 0.0
     total_hit, total_num = 0.0, 0.0
 
@@ -151,28 +142,82 @@ def train_epoch(source_dataloader, target_dataloader, lamb):
     return running_D_loss / (i + 1), running_F_loss / (i + 1), total_hit / total_num
 
 
-if __name__ == '__main__':
-    for epoch in range(200):
-        train_D_loss, train_F_loss, train_acc = train_epoch(
-            source_dataloader, target_dataloader, lamb=LAMB
-        )
-        torch.save(feature_extractor.state_dict(), 'extractor_model.bin')
-        torch.save(label_predictor.state_dict(), 'predictor_model.bin')
-        print(f'epoch {epoch:>3d}: train D loss: {train_D_loss:6.4f}, '
-              f'train F loss: {train_F_loss:6.4f}, acc {train_acc:6.4f}')
+def save_models(feature_extractor, label_predictor):
+    torch.save(feature_extractor.state_dict(), EXTRACTOR_PATH)
+    torch.save(label_predictor.state_dict(), PREDICTOR_PATH)
+    print(f"\n模型已保存: {EXTRACTOR_PATH}, {PREDICTOR_PATH}")
 
-    # ===================== 推理 =====================
+
+def train(args, feature_extractor, label_predictor, domain_classifier,
+          class_criterion, domain_criterion,
+          optimizer_F, optimizer_C, optimizer_D, scaler,
+          source_dataloader, target_dataloader):
+    try:
+        for epoch in range(args.epochs):
+            train_D_loss, train_F_loss, train_acc = train_epoch(
+                source_dataloader, target_dataloader, lamb=LAMB,
+                feature_extractor=feature_extractor,
+                label_predictor=label_predictor,
+                domain_classifier=domain_classifier,
+                domain_criterion=domain_criterion,
+                class_criterion=class_criterion,
+                optimizer_F=optimizer_F, optimizer_C=optimizer_C,
+                optimizer_D=optimizer_D, scaler=scaler,
+            )
+            save_models(feature_extractor, label_predictor)
+            print(f'epoch {epoch:>3d}: train D loss: {train_D_loss:6.4f}, '
+                  f'train F loss: {train_F_loss:6.4f}, acc {train_acc:6.4f}')
+    except KeyboardInterrupt:
+        print("\n训练中断，正在保存当前模型...")
+        save_models(feature_extractor, label_predictor)
+
+
+def infer(feature_extractor, label_predictor, test_dataloader):
+    feature_extractor.load_state_dict(torch.load(EXTRACTOR_PATH, map_location='npu:0'))
+    label_predictor.load_state_dict(torch.load(PREDICTOR_PATH, map_location='npu:0'))
+    feature_extractor.eval()
+    label_predictor.eval()
 
     result = []
-    label_predictor.eval()
-    feature_extractor.eval()
-    for i, (test_data, _) in enumerate(test_dataloader):
-        test_data = test_data.npu()
-        class_logits = label_predictor(feature_extractor(test_data))
-        x = torch.argmax(class_logits, dim=1).cpu().detach().numpy()
-        result.append(x)
+    with torch.no_grad():
+        for test_data, _ in test_dataloader:
+            test_data = test_data.npu()
+            class_logits = label_predictor(feature_extractor(test_data))
+            x = torch.argmax(class_logits, dim=1).cpu().numpy()
+            result.append(x)
 
     result = np.concatenate(result)
     df = pd.DataFrame({'id': np.arange(len(result)), 'label': result})
     df.to_csv('DaNN_submission.csv', index=False)
     print(f"推理完成，结果已保存到 DaNN_submission.csv ({len(result)} 条)")
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='HW11 DaNN 域对抗训练')
+    parser.add_argument('--mode', choices=['train', 'infer', 'all'], default='all',
+                        help='train=仅训练, infer=仅推理(加载已保存权重), all=训练+推理 (默认)')
+    parser.add_argument('--epochs', type=int, default=NUM_EPOCHS, help=f'训练轮数 (默认 {NUM_EPOCHS})')
+    args = parser.parse_args()
+
+    feature_extractor = FeatureExtractor().npu()
+    label_predictor = LabelPredictor().npu()
+    domain_classifier = DomainClassifier().npu()
+
+    class_criterion = nn.CrossEntropyLoss()
+    domain_criterion = nn.BCEWithLogitsLoss()
+
+    optimizer_F = optim.Adam(feature_extractor.parameters())
+    optimizer_C = optim.Adam(label_predictor.parameters())
+    optimizer_D = optim.Adam(domain_classifier.parameters())
+
+    scaler = torch.amp.GradScaler("npu")
+
+    if args.mode in ('train', 'all'):
+        train(args, feature_extractor, label_predictor, domain_classifier,
+              class_criterion, domain_criterion,
+              optimizer_F, optimizer_C, optimizer_D, scaler,
+              source_dataloader, target_dataloader)
+
+    if args.mode in ('infer', 'all'):
+        infer(feature_extractor, label_predictor, test_dataloader)
