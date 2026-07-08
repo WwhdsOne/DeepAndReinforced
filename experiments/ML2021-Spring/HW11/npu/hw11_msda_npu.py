@@ -25,7 +25,9 @@ from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader, Dataset, ConcatDataset
 import pandas as pd
 
-warnings.filterwarnings("ignore", message=".*lr_scheduler.step.*before.*optimizer.step.*")
+warnings.filterwarnings(
+    "ignore", message=".*lr_scheduler.step.*before.*optimizer.step.*"
+)
 
 # ===================== 配置 =====================
 
@@ -37,37 +39,44 @@ MM_WEIGHT = 0.01
 NUM_EPOCHS = 200
 PSEUDO_EPOCHS = 50
 PSEUDO_THRESHOLD = 0.95
-EXTRACTOR_PATH = 'extractor_model.bin'
-PREDICTOR_PATH = 'predictor_model.bin'
-SOURCE_DOMAINS = ['sobel', 'canny', 'laplacian', 'sketch']
-MSDA_DATA_DIR = '../real_or_drawing/msda_data'
-TARGET_DIR = '../real_or_drawing/test_data'
+EXTRACTOR_PATH = "extractor_model.bin"
+PREDICTOR_PATH = "predictor_model.bin"
+SOURCE_DOMAINS = ["sobel", "canny", "laplacian", "sketch"]
+MSDA_DATA_DIR = "../real_or_drawing/msda_data"
+TARGET_DIR = "../real_or_drawing/test_data"
 
 # ===================== 数据变换 =====================
 
-source_transform = transforms.Compose([
-    transforms.Grayscale(),
-    transforms.Resize((32, 32)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(15, fill=(0,)),
-    transforms.ToTensor(),
-])
+source_transform = transforms.Compose(
+    [
+        transforms.Grayscale(),
+        transforms.Resize((32, 32)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(15, fill=(0,)),
+        transforms.ToTensor(),
+    ]
+)
 
-target_transform = transforms.Compose([
-    transforms.Grayscale(),
-    transforms.Resize((32, 32)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(15, fill=(0,)),
-    transforms.ToTensor(),
-])
+target_transform = transforms.Compose(
+    [
+        transforms.Grayscale(),
+        transforms.Resize((32, 32)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(15, fill=(0,)),
+        transforms.ToTensor(),
+    ]
+)
 
-test_transform = transforms.Compose([
-    transforms.Grayscale(),
-    transforms.Resize((32, 32)),
-    transforms.ToTensor(),
-])
+test_transform = transforms.Compose(
+    [
+        transforms.Grayscale(),
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+    ]
+)
 
 # ===================== 多源域数据集 =====================
+
 
 class MultiSourceDataset(Dataset):
     """从多个源域中均匀采样"""
@@ -92,15 +101,31 @@ class MultiSourceDataset(Dataset):
 
 # ===================== 模型定义 =====================
 
+
 class FeatureExtractor(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(1, 64, 3, 1, 1), nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, 3, 1, 1), nn.BatchNorm2d(128), nn.ReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(128, 256, 3, 1, 1), nn.BatchNorm2d(256), nn.ReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(256, 256, 3, 1, 1), nn.BatchNorm2d(256), nn.ReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(256, 512, 3, 1, 1), nn.BatchNorm2d(512), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(1, 64, 3, 1, 1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, 3, 1, 1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, 3, 1, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(256, 256, 3, 1, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(256, 512, 3, 1, 1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
         )
 
     def forward(self, x):
@@ -111,8 +136,10 @@ class LabelPredictor(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer = nn.Sequential(
-            nn.Linear(512, 512), nn.ReLU(),
-            nn.Linear(512, 512), nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
             nn.Linear(512, 10),
         )
 
@@ -124,10 +151,18 @@ class DomainClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer = nn.Sequential(
-            nn.Linear(512, 512), nn.BatchNorm1d(512), nn.ReLU(),
-            nn.Linear(512, 512), nn.BatchNorm1d(512), nn.ReLU(),
-            nn.Linear(512, 512), nn.BatchNorm1d(512), nn.ReLU(),
-            nn.Linear(512, 512), nn.BatchNorm1d(512), nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
             nn.Linear(512, 1),
         )
 
@@ -136,6 +171,7 @@ class DomainClassifier(nn.Module):
 
 
 # ===================== 调度函数 =====================
+
 
 def adaptive_lambda(step, total_steps, gamma=GAMMA):
     """DANN 论文的自适应 lambda: 从 0 渐增到 LAMB_MAX"""
@@ -158,6 +194,7 @@ def create_lr_scheduler(optimizer, total_steps, warmup_ratio=WARMUP_RATIO):
 
 # ===================== 矩匹配损失 =====================
 
+
 def moment_matching_loss(source_features, target_features):
     """一阶（均值）和二阶（协方差）矩匹配"""
     s_mean = source_features.mean(dim=0)
@@ -175,6 +212,7 @@ def moment_matching_loss(source_features, target_features):
 
 
 # ===================== 均衡推理 =====================
+
 
 def balanced_predict(logits, num_classes=10):
     """基于置信度的均衡分配：每类恰好 N/10 个样本"""
@@ -199,7 +237,19 @@ def balanced_predict(logits, num_classes=10):
 
 # ===================== 训练循环 =====================
 
-def train_epoch_msda(source_loader, target_loader, models, optimizers, criterions, scaler, mm_weight, global_step, total_steps, lr_schedulers):
+
+def train_epoch_msda(
+    source_loader,
+    target_loader,
+    models,
+    optimizers,
+    criterions,
+    scaler,
+    mm_weight,
+    global_step,
+    total_steps,
+    lr_schedulers,
+):
     feature_extractor, label_predictor, domain_classifier = models
     optimizer_F, optimizer_C, optimizer_D = optimizers
     class_criterion, domain_criterion = criterions
@@ -207,7 +257,9 @@ def train_epoch_msda(source_loader, target_loader, models, optimizers, criterion
     running_D_loss, running_F_loss = 0.0, 0.0
     total_hit, total_num = 0.0, 0.0
 
-    for i, ((source_data, source_label), (target_data, _)) in enumerate(zip(source_loader, target_loader)):
+    for i, ((source_data, source_label), (target_data, _)) in enumerate(
+        zip(source_loader, target_loader)
+    ):
         lamb = adaptive_lambda(global_step + i, total_steps)
         source_data = source_data.npu()
         source_label = source_label.npu()
@@ -232,7 +284,9 @@ def train_epoch_msda(source_loader, target_loader, models, optimizers, criterion
         with torch.autocast("npu"):
             class_logits = label_predictor(feature[:n_source])
             domain_logits = domain_classifier(feature)
-            loss_adv = class_criterion(class_logits, source_label) - lamb * domain_criterion(domain_logits, domain_label)
+            loss_adv = class_criterion(
+                class_logits, source_label
+            ) - lamb * domain_criterion(domain_logits, domain_label)
             loss_mm = moment_matching_loss(feature[:n_source], feature[n_source:])
             loss_F = loss_adv + mm_weight * loss_mm
         running_F_loss += loss_F.item()
@@ -251,12 +305,18 @@ def train_epoch_msda(source_loader, target_loader, models, optimizers, criterion
         total_hit += torch.sum(torch.argmax(class_logits, dim=1) == source_label).item()
         total_num += n_source
 
-        print(i, end='\r')
+        print(i, end="\r")
 
-    return running_D_loss / (i + 1), running_F_loss / (i + 1), total_hit / total_num, global_step + i + 1
+    return (
+        running_D_loss / (i + 1),
+        running_F_loss / (i + 1),
+        total_hit / total_num,
+        global_step + i + 1,
+    )
 
 
 # ===================== 伪标签 =====================
+
 
 def generate_pseudo_labels(feature_extractor, label_predictor, test_loader, threshold):
     """为目标域生成高置信度伪标签"""
@@ -310,9 +370,10 @@ def train_epoch_pseudo(pseudo_loader, models, optimizers, criterion, scaler):
 
 # ===================== 推理 =====================
 
+
 def run_inference(feature_extractor, label_predictor, test_loader):
-    feature_extractor.load_state_dict(torch.load(EXTRACTOR_PATH, map_location='npu:0'))
-    label_predictor.load_state_dict(torch.load(PREDICTOR_PATH, map_location='npu:0'))
+    feature_extractor.load_state_dict(torch.load(EXTRACTOR_PATH, map_location="npu:0"))
+    label_predictor.load_state_dict(torch.load(PREDICTOR_PATH, map_location="npu:0"))
     feature_extractor.eval()
     label_predictor.eval()
 
@@ -326,12 +387,13 @@ def run_inference(feature_extractor, label_predictor, test_loader):
     all_logits = torch.cat(all_logits, dim=0)
     predictions = balanced_predict(all_logits)
 
-    df = pd.DataFrame({'id': np.arange(len(predictions)), 'label': predictions.numpy()})
-    df.to_csv('DaNN_submission.csv', index=False)
+    df = pd.DataFrame({"id": np.arange(len(predictions)), "label": predictions.numpy()})
+    df.to_csv("DaNN_submission.csv", index=False)
     print(f"均衡推理完成，结果已保存到 DaNN_submission.csv ({len(predictions)} 条)")
 
 
 # ===================== 保存/加载 =====================
+
 
 def save_models(feature_extractor, label_predictor):
     torch.save(feature_extractor.state_dict(), EXTRACTOR_PATH)
@@ -341,22 +403,27 @@ def save_models(feature_extractor, label_predictor):
 
 # ===================== 主函数 =====================
 
+
 def main():
-    parser = argparse.ArgumentParser(description='HW11 MSDA 多源域对抗训练')
-    parser.add_argument('--mode', choices=['train', 'pseudo', 'infer', 'all'], default='all',
-                        help='train=MSDA训练, pseudo=伪标签微调, infer=推理, all=全流程 (默认)')
-    parser.add_argument('--epochs', type=int, default=NUM_EPOCHS)
-    parser.add_argument('--pseudo-epochs', type=int, default=PSEUDO_EPOCHS)
-    parser.add_argument('--pseudo-threshold', type=float, default=PSEUDO_THRESHOLD)
-    parser.add_argument('--lamb-max', type=float, default=LAMB_MAX)
-    parser.add_argument('--mm-weight', type=float, default=MM_WEIGHT)
-    parser.add_argument('--lr', type=float, default=LR)
+    parser = argparse.ArgumentParser(description="HW11 MSDA 多源域对抗训练")
+    parser.add_argument(
+        "--mode",
+        choices=["train", "pseudo", "infer", "all"],
+        default="all",
+        help="train=MSDA训练, pseudo=伪标签微调, infer=推理, all=全流程 (默认)",
+    )
+    parser.add_argument("--epochs", type=int, default=NUM_EPOCHS)
+    parser.add_argument("--pseudo-epochs", type=int, default=PSEUDO_EPOCHS)
+    parser.add_argument("--pseudo-threshold", type=float, default=PSEUDO_THRESHOLD)
+    parser.add_argument("--lamb-max", type=float, default=LAMB_MAX)
+    parser.add_argument("--mm-weight", type=float, default=MM_WEIGHT)
+    parser.add_argument("--lr", type=float, default=LR)
     args = parser.parse_args()
 
     # ---- 数据加载 ----
     source_datasets = []
     for domain in SOURCE_DOMAINS:
-        path = f'{MSDA_DATA_DIR}/{domain}'
+        path = f"{MSDA_DATA_DIR}/{domain}"
         try:
             ds = ImageFolder(path, transform=source_transform)
             source_datasets.append(ds)
@@ -369,8 +436,12 @@ def main():
     source_loader = DataLoader(multi_source, batch_size=32, shuffle=True, num_workers=2)
 
     target_dataset = ImageFolder(TARGET_DIR, transform=target_transform)
-    target_loader = DataLoader(target_dataset, batch_size=32, shuffle=True, num_workers=2)
-    test_loader = DataLoader(target_dataset, batch_size=128, shuffle=False, num_workers=2)
+    target_loader = DataLoader(
+        target_dataset, batch_size=32, shuffle=True, num_workers=2
+    )
+    test_loader = DataLoader(
+        target_dataset, batch_size=128, shuffle=False, num_workers=2
+    )
 
     # ---- 模型初始化 ----
     feature_extractor = FeatureExtractor().npu()
@@ -399,7 +470,7 @@ def main():
     criterions = (class_criterion, domain_criterion)
 
     # ---- Phase 1: MSDA 训练 ----
-    if args.mode in ('train', 'all'):
+    if args.mode in ("train", "all"):
         print(f"\n=== MSDA 训练 ({args.epochs} epochs) ===")
         print(f"  lambda: 0 → {args.lamb_max} (自适应), mm_weight={args.mm_weight}")
         print(f"  lr: {args.lr}, warmup={WARMUP_RATIO}, total_steps={total_steps}")
@@ -408,32 +479,54 @@ def main():
         try:
             for epoch in range(args.epochs):
                 d_loss, f_loss, acc, global_step = train_epoch_msda(
-                    source_loader, target_loader, models, optimizers, criterions,
-                    scaler, args.mm_weight, global_step, total_steps, lr_schedulers,
+                    source_loader,
+                    target_loader,
+                    models,
+                    optimizers,
+                    criterions,
+                    scaler,
+                    args.mm_weight,
+                    global_step,
+                    total_steps,
+                    lr_schedulers,
                 )
                 save_models(feature_extractor, label_predictor)
                 current_lamb = adaptive_lambda(global_step, total_steps)
-                current_lr = optimizer_F.param_groups[0]['lr']
-                print(f'epoch {epoch:>3d}: D loss: {d_loss:6.4f}, '
-                      f'F loss: {f_loss:6.4f}, acc {acc:6.4f}, '
-                      f'λ={current_lamb:.3f}, lr={current_lr:.5f}')
+                current_lr = optimizer_F.param_groups[0]["lr"]
+                print(
+                    f"epoch {epoch:>3d}: D loss: {d_loss:6.4f}, "
+                    f"F loss: {f_loss:6.4f}, acc {acc:6.4f}, "
+                    f"λ={current_lamb:.3f}, lr={current_lr:.5f}"
+                )
         except KeyboardInterrupt:
             print("\n训练中断，保存当前模型...")
             save_models(feature_extractor, label_predictor)
 
     # ---- Phase 2: 伪标签半监督 ----
-    if args.mode in ('pseudo', 'all'):
-        print(f"\n=== 伪标签半监督训练 ({args.pseudo_epochs} epochs, 阈值={args.pseudo_threshold}) ===")
+    if args.mode in ("pseudo", "all"):
+        # 单独运行 pseudo 时，加载 Phase 1 保存的权重
+        if args.mode == "pseudo":
+            print("加载已保存的模型权重...")
+            feature_extractor.load_state_dict(torch.load(EXTRACTOR_PATH, map_location="npu:0"))
+            label_predictor.load_state_dict(torch.load(PREDICTOR_PATH, map_location="npu:0"))
+
+        print(
+            f"\n=== 伪标签半监督训练 ({args.pseudo_epochs} epochs, 阈值={args.pseudo_threshold}) ==="
+        )
         pseudo_labels, mask = generate_pseudo_labels(
             feature_extractor, label_predictor, test_loader, args.pseudo_threshold
         )
         n_pseudo = mask.sum().item()
-        print(f"  高置信度伪标签: {n_pseudo}/{len(mask)} 个 ({n_pseudo / len(mask) * 100:.1f}%)")
+        print(
+            f"  高置信度伪标签: {n_pseudo}/{len(mask)} 个 ({n_pseudo / len(mask) * 100:.1f}%)"
+        )
 
         if n_pseudo > 0:
             target_dataset_no_aug = ImageFolder(TARGET_DIR, transform=test_transform)
             pseudo_indices = mask.nonzero(as_tuple=True)[0].tolist()
-            pseudo_subset = torch.utils.data.Subset(target_dataset_no_aug, pseudo_indices)
+            pseudo_subset = torch.utils.data.Subset(
+                target_dataset_no_aug, pseudo_indices
+            )
             pseudo_labels_subset = pseudo_labels[mask]
             pseudo_ds = torch.utils.data.TensorDataset(
                 torch.stack([target_dataset_no_aug[i][0] for i in pseudo_indices]),
@@ -444,10 +537,14 @@ def main():
             try:
                 for epoch in range(args.pseudo_epochs):
                     loss, acc = train_epoch_pseudo(
-                        pseudo_loader, models, optimizers, class_criterion, scaler,
+                        pseudo_loader,
+                        models,
+                        optimizers,
+                        class_criterion,
+                        scaler,
                     )
                     save_models(feature_extractor, label_predictor)
-                    print(f'pseudo epoch {epoch:>3d}: loss {loss:6.4f}, acc {acc:6.4f}')
+                    print(f"pseudo epoch {epoch:>3d}: loss {loss:6.4f}, acc {acc:6.4f}")
             except KeyboardInterrupt:
                 print("\n伪标签训练中断，保存当前模型...")
                 save_models(feature_extractor, label_predictor)
@@ -455,10 +552,10 @@ def main():
             print("  无高置信度伪标签，跳过")
 
     # ---- Phase 3: 均衡推理 ----
-    if args.mode in ('infer', 'all'):
+    if args.mode in ("infer", "all"):
         print("\n=== 均衡推理 ===")
         run_inference(feature_extractor, label_predictor, test_loader)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
