@@ -54,8 +54,8 @@ test_dataloader = DataLoader(target_dataset, batch_size=128, shuffle=False)
 feature_extractor = FeatureExtractor().npu()
 label_predictor = LabelPredictor().npu()
 
-feature_extractor.load_state_dict(torch.load('extractor_model.bin', map_location='npu:0'))
-label_predictor.load_state_dict(torch.load('predictor_model.bin', map_location='npu:0'))
+feature_extractor.load_state_dict(torch.load('extractor_model.bin', map_location='npu:0', weights_only=False))
+label_predictor.load_state_dict(torch.load('predictor_model.bin', map_location='npu:0', weights_only=False))
 feature_extractor.eval()
 label_predictor.eval()
 

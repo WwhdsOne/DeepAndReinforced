@@ -173,8 +173,8 @@ def train(args, feature_extractor, label_predictor, domain_classifier,
 
 
 def infer(feature_extractor, label_predictor, test_dataloader):
-    feature_extractor.load_state_dict(torch.load(EXTRACTOR_PATH, map_location='npu:0'))
-    label_predictor.load_state_dict(torch.load(PREDICTOR_PATH, map_location='npu:0'))
+    feature_extractor.load_state_dict(torch.load(EXTRACTOR_PATH, map_location='npu:0', weights_only=False))
+    label_predictor.load_state_dict(torch.load(PREDICTOR_PATH, map_location='npu:0', weights_only=False))
     feature_extractor.eval()
     label_predictor.eval()
 
