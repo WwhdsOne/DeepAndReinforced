@@ -39,6 +39,8 @@ experiments/ML2021-Spring/HW11/ml2021spring-hw11.zip
 experiments/ML2021-Spring/HW11/*.bin
 experiments/ML2021-Spring/HW11/*_submission.csv
 experiments/ML2021-Spring/HW11/npu.zip
+experiments/ML2021-Spring/HW12/best_model.pt
+experiments/ML2021-Spring/HW12/Action_List_test.npy
 # === 测试 ===
 .pytest_cache/
 .mypy_cache/
